@@ -59,6 +59,11 @@ for s in pod-number.sh pod-send.sh; do
 done
 n=$(ls "$SK/scripts" | wc -l | tr -d ' ')
 [ "$n" = 2 ] && ok "exactly two scripts" || bad "exactly two scripts" "$n"
+if git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+  for f in $(cd "$ROOT" && find .claude/skills/pod tests -type f); do
+    git -C "$ROOT" check-ignore -q "$f" && bad "$f is not ignored by .gitignore" || ok "$f is not ignored by .gitignore"
+  done
+fi
 
 # --- nothing of the hybrid left -----------------------------------------------------------------------
 for p in plugins specs .claude-plugin; do
