@@ -34,5 +34,15 @@ eq "size up to the lot"        "$(bc_int "(10^15 + 1000000000000 - 1) / 10000000
 eq "comparison true"           "$(bc_int "100000000000000000000 > 0")"   "1"
 eq "comparison false"          "$(bc_int "0 > 0")"                       "0"
 
+# send_failure_kind: which refusals last (status drops to "problem") and which pass
+eq "region block lasts"        "$(send_failure_kind -32025 'not available in your region')" "lasting"
+eq "blacklist lasts"           "$(send_failure_kind -32000 'Transaction is blacklisted')"   "lasting"
+eq "locked account lasts"      "$(send_failure_kind -32000 'account is locked')"            "lasting"
+eq "nonce clash passes"        "$(send_failure_kind -32000 'nonce too low')"                "passing"
+eq "pending tx passes"         "$(send_failure_kind -32000 'Account has pending transaction')" "passing"
+
+# short_addr
+eq "short address"             "$(short_addr 0x035A9E2f3ED8bAAD656E66BF3f0071da40DcDa70)" "0x035A…Da70"
+
 echo "$pass passed, $failed failed"
 [ "$failed" -eq 0 ]

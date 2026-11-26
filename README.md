@@ -23,7 +23,7 @@ Then ask the agent to set it up, for example: "Set up the pod plugin with our de
 | Section | Skill | State |
 |---|---|---|
 | 1 Setup | `/pod:setup` | Built. Read-only steps tested; the real test transaction is run by the user |
-| 2 Status | `/pod:status` | Not yet |
+| 2 Status | `/pod:status` | Built. Tested read-only; levels checked with a throwaway wallet |
 | 3 Account | `/pod:account` | Not yet |
 | 4 Trading | `/pod:trade` | Not yet |
 | 5 Market data | `/pod:markets` | Not yet |
@@ -34,8 +34,8 @@ Then ask the agent to set it up, for example: "Set up the pod plugin with our de
 
 | Test | What it checks | Network |
 |---|---|---|
-| `plugins/pod/tests/units.sh` | Pod's number formats: hex and decimal, 10^18 scaling, maths past 64-bit integers | None |
-| `plugins/pod/tests/smoke.sh` | The setup scripts and their error messages, with a throwaway key and profile; that no password file is left behind | Pod staging, read-only |
+| `plugins/pod/tests/units.sh` | Pod's number formats (hex and decimal, 10^18 scaling, maths past 64-bit integers); which refused sends count as lasting | None |
+| `plugins/pod/tests/smoke.sh` | Setup and status with a throwaway key and profile: error messages, every level reachable without sending, send recording; that no password file is left behind | Pod staging, read-only |
 | `plugins/pod/scripts/test-transaction.sh --yes` | A real order and cancel with the connected wallet | Pod staging, sends two transactions |
 
 ## Secrets

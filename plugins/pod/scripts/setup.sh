@@ -79,12 +79,12 @@ if ! $funded; then
   exit 0
 fi
 if $skip; then
-  summary "set up" 'null' "No test transaction was sent. Run test-transaction.sh to prove the wallet can trade."
+  summary "connected, untested" 'null' "No test transaction was sent. Run test-transaction.sh to prove the wallet can trade."
   exit 0
 fi
 if ! $yes; then
   t=$(run test-transaction.sh) || { echo "$t"; exit 1; }
-  summary "set up" 'null' "Waiting for approval of the test transaction." \
+  summary "connected, untested" 'null' "Waiting for approval of the test transaction." \
     | jq --argjson t "$t" '. + {needs_approval: true, plan: $t.plan,
         next: "Ask the user to approve or deny the test transaction. Only on approve, run test-transaction.sh --yes."}'
   exit 0

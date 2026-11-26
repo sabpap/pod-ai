@@ -31,7 +31,21 @@ check "unfunded key is read-only" '.ok and .level == "connected, read-only"' "$S
 check "profile holds no key"      '.wallet.env_var == "SMOKE_KEY"'        "$S/profile.sh" show
 if grep -q "${SMOKE_KEY#0x}" "$POD_PLUGIN_HOME/profile.json"; then failed=$((failed+1)); echo "FAIL key found in profile"; else pass=$((pass+1)); echo "ok   key not in profile file"; fi
 check "unfunded test refused"     '.ok == false and .step == "test"'      "$S/test-transaction.sh" --dry-run
+
+# Status, with the same unfunded throwaway wallet
+check "status: unfunded is read-only"  '.level == "connected, read-only" and (.warnings | length) == 1' "$S/status.sh" --quick
+check "status: full check signs"       '.check == "full" and .wallet.signs == true' "$S/status.sh"
+check "status: cannot trade"           '[.capabilities[] | select(.name == "trade with this wallet")][0].can == false' "$S/status.sh" --quick
+check "status: missing variable"       '.level == "problem" and .problems[0].check == "wallet"' env -u SMOKE_KEY "$S/status.sh" --quick
+( source "$S/lib.sh"; record_send false true "" "Pod refused the transaction: not available in your region (-32025)." )
+check "status: lasting refusal"        '.level == "problem" and .problems[0].check == "sending"' "$S/status.sh" --quick
+( source "$S/lib.sh"; record_send true false "0xabc" "" )
+check "status: accepted send clears"   '.level == "connected, read-only" and .proof.last_send.ok == true' "$S/status.sh" --quick
+( source "$S/lib.sh"; record_send false false "" "nonce too low" )
+check "status: passing refusal ignored" '.level == "connected, read-only"' "$S/status.sh" --quick
+
 check "disconnect"                '.disconnected'                         "$S/profile.sh" delete
+check "status: not set up"        '.level == "not set up" and .wallet == null' "$S/status.sh" --quick
 check "send refused when not set up" '.ok == false'                       "$S/wallet.sh" send 0x0 "f()"
 
 # No password file may be left behind. Needs a keystore with a Keychain password; skipped otherwise.

@@ -10,7 +10,8 @@
 #
 # Without --keystore or --env, the wallet comes from the saved profile.
 # `send` encodes the call, signs it with Foundry's cast, and sends it with eth_sendRawTransaction.
-# It refuses any network other than pod staging.
+# It refuses any network other than pod staging. With the profile's wallet, it records the outcome in
+# the profile as `last_send`, which status reads: accepted, or refused for a lasting or passing reason.
 #
 # Secrets: the keystore password goes to cast through a private temp file, deleted on exit. A private
 # key from an environment variable is passed to cast as an argument, so it is visible to this user's
@@ -18,13 +19,14 @@
 
 source "$(dirname "$0")/lib.sh"
 
-wtype="" ; wref=""
+wtype="" ; wref="" ; from_profile=false
 case "${1:-}" in
   --keystore) wtype="keystore"; wref="${2:-}"; shift 2 || true ;;
   --env)      wtype="env";      wref="${2:-}"; shift 2 || true ;;
 esac
 if [ -z "$wtype" ]; then
   profile_exists || fail wallet "No wallet is connected." "Run /pod:setup first."
+  from_profile=true
   wtype=$(profile_get '.wallet.type')
   if [ "$wtype" = "keystore" ]; then wref=$(profile_get '.wallet.keystore'); else wref=$(profile_get '.wallet.env_var'); fi
 fi
@@ -108,19 +110,27 @@ case "$cmd" in
           ${nonce_args[@]+"${nonce_args[@]}"} "${SIGNER[@]}" 2>"$ERRFILE") \
       || fail send "Could not build or sign the transaction: $(tail -1 "$ERRFILE")"
     case "$raw" in 0x*) ;; *) fail send "cast did not return a signed transaction." ;; esac
-    out=$(rpc eth_sendRawTransaction "[\"$raw\"]") || fail send "Pod did not answer the send." "Try again; check the nonce first."
+    out=$(rpc eth_sendRawTransaction "[\"$raw\"]") || {
+      $from_profile && record_send false false "" "Pod did not answer the send."
+      fail send "Pod did not answer the send." "Try again; check the nonce first."
+    }
     if [ "$(echo "$out" | jq 'has("error")')" = "true" ]; then
       code=$(echo "$out" | jq -r '.error.code')
       msg=$(echo "$out" | jq -r '.error.message')
+      kind=$(send_failure_kind "$code" "$msg")
       case "$code" in
-        -32025) fail send "Pod refused the transaction: not available in your region ($code)." ;;
+        -32025) why="Pod refused the transaction: not available in your region ($code)." ;;
         *) case "$msg" in
-             *lacklist*) fail send "Pod refused the transaction: the account or transaction is blacklisted ($code)." ;;
-             *) fail send "Pod refused the transaction: $msg ($code)." ;;
+             *lacklist*) why="Pod refused the transaction: the account or transaction is blacklisted ($code)." ;;
+             *) why="Pod refused the transaction: $msg ($code)." ;;
            esac ;;
       esac
+      $from_profile && record_send false "$([ "$kind" = lasting ] && echo true || echo false)" "" "$why"
+      fail send "$why"
     fi
-    jq -n --arg tx "$(echo "$out" | jq -r '.result')" '{ok: true, tx: $tx}'
+    tx=$(echo "$out" | jq -r '.result')
+    $from_profile && record_send true false "$tx" ""
+    jq -n --arg tx "$tx" '{ok: true, tx: $tx}'
     ;;
 
   *)

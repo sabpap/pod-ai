@@ -183,7 +183,7 @@ One reference that every skill points to: network addresses, identifiers, 10^18 
 | `/pod:live` | 6 | "Watch my positions", "stream the SK Hynix book" |
 | `/pod:network` | 7 | "How busy is the network?", "show transaction 0x…" |
 
-**Awareness at session start.** A session-start hook runs the status check, so every new agent session already knows the level, the address, the cash and what it can do, before the user asks anything.
+**Awareness on demand.** There is no session-start hook (decided 2026-11-26). The agent learns the level, the address, the cash and what it can do by running `/pod:status`, which the other skills call when they need it.
 
 ## How it will be used
 
@@ -191,7 +191,7 @@ Hypothetical requests, to check the design covers them. Each row says what the p
 
 | The user says | The plugin provides | The AI or harness brings |
 |---|---|---|
-| (opens a new session) | Status at session start: "Ready to trade, address 0x035A…, $100 cash, 0 positions" | Nothing |
+| "Are we connected?" | `/pod:status`: "Ready to trade, address 0x035A…, $100 cash, 0 positions", and what the agent can and cannot do | Nothing |
 | "What's our balance?" | Account section, connected account by default: cash, withdrawable, account value, profit | Nothing |
 | "What's X's balance?" | Same calls with X's address, or X's saved name | Nothing |
 | "How many transactions on the network in the last second?" | Network section: read the last two rounds with `eth_getBlockByNumber` and count their transactions | Nothing |

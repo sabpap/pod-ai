@@ -104,6 +104,34 @@ profile_exists() { [ -f "$PROFILE" ]; }
 
 profile_get() { jq -r "$1" "$PROFILE"; }
 
+# --- send outcomes (status decision T4) -------------------------------------------------------------
+
+# send_failure_kind CODE MESSAGE: "lasting" when pod refused for a reason that will not pass by
+# itself (region, blacklist, frozen account), otherwise "passing" (timeouts, nonce clashes, busy).
+send_failure_kind() {
+  local code="$1" msg
+  msg=$(echo "$2" | tr 'A-Z' 'a-z')
+  [ "$code" = "-32025" ] && { echo lasting; return; }
+  case "$msg" in
+    *region*|*blacklist*|*locked*|*equivocat*|*recover*) echo lasting ;;
+    *) echo passing ;;
+  esac
+}
+
+# record_send OK LASTING TX ERROR: store the latest send's outcome in the profile as `last_send`.
+# Never fails the caller: a send that went through must not be reported as failed because of this.
+record_send() {
+  profile_exists || return 0
+  local updated
+  updated=$(jq --argjson ok "$1" --argjson lasting "$2" --arg tx "$3" --arg err "$4" --arg at "$(now_iso)" '
+    .last_send = ({ok: $ok, at: $at}
+      + (if $tx == "" then {} else {tx: $tx} end)
+      + (if $ok then {} else {lasting: $lasting, error: $err} end))' "$PROFILE" 2>/dev/null) || return 0
+  echo "$updated" | profile_write >/dev/null 2>&1 || true
+}
+
+short_addr() { local a="$1"; echo "${a:0:6}…${a: -4}"; }
+
 profile_write() {   # reads the full profile JSON on stdin
   mkdir -p "$POD_HOME"
   chmod 700 "$POD_HOME"

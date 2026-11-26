@@ -38,7 +38,8 @@ Never ask for, read, print or store a password or a private key. If a keystore h
 
    | `level` | Meaning | What to do |
    |---|---|---|
-   | `set up` with `needs_approval: true` | Connected and funded; the test transaction is waiting for approval | Step 4 |
+   | `connected, untested` with `needs_approval: true` | Connected and funded; the test transaction is waiting for approval | Step 4 |
+   | `connected, untested` without `needs_approval` | Connected and funded; the test was skipped. Trading works but is unproven | Tell the user; offer the test |
    | `connected, read-only` | Connected, but the account has no cash on pod, so it cannot trade | Tell the user; nothing else to do until it is funded |
    | `ready to trade` | Everything passed, including the test transaction | Report it |
    | `problem` | The test transaction failed | Report `test_transaction.error` and `note` |
@@ -53,7 +54,7 @@ Never ask for, read, print or store a password or a private key. If a keystore h
 
    Do not add a recommendation or a third option. If the AskUserQuestion tool is not available, ask the same question in plain text and accept only "approve" or "deny".
 
-   **Only "Approve" sends.** Any other answer, including a typed "Other" reply, counts as Deny: send nothing and report "set up, test transaction not approved".
+   **Only "Approve" sends.** Any other answer, including a typed "Other" reply, counts as Deny: send nothing and report "connected, untested: test transaction not approved. Trading is allowed; the first trade will be the proof".
 
    On Approve:
    ```bash
