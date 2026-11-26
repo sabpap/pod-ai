@@ -8,7 +8,7 @@ Trading places, changes and cancels orders and stop-loss / take-profit triggers 
 
 | # | Topic | Decision |
 |---|---|---|
-| TR1 | Approval | A profile setting, `approval`: **`ask`** (default) shows a preview and an Approve / Deny question before every send; **`auto`** sends without asking, for autonomous agents. Changed with `/pod:setup` |
+| TR1 | Approval | A profile setting, `approval`: **`ask`** (default) shows a preview and an Approve / Deny question before every send; **`auto`** sends without asking, for autonomous agents. Changed by the user with `/pod:settings` |
 | TR2 | Prices and sizes between the market's steps | **Round to the safe side and say so**: a buy price goes down, a sell price up, a size down. The preview shows each change, e.g. "151.034 → 151.03" |
 | TR3 | Worst price for a market order | **2% from the mark price** unless the order names its own cap or band. The default band is a profile setting, `market_band_pct` |
 | TR4 | Reporting the outcome | **"Sent" at once, the result from the background**: the agent reports the send straight away, keeps following the order, and reports filled / resting / refused when the auction round settles. The user can keep talking meanwhile |
@@ -101,7 +101,7 @@ Shown by `/pod:status` and at the end of setup, and changed with `/pod:settings`
 
 ## Implementation notes (2026-11-26)
 
-Built in [plugins/pod](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/plugins/pod/): `scripts/trade.sh`, the `/pod:trade` skill, the settings in `profile.sh` (`settings`, `set`) and `/pod:setup`, `to_wei`, `duration_s` and `setting` in `lib.sh`, and `find_market` in `pod.jq`. Version 0.4.0.
+Built in [plugins/pod](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/plugins/pod/): `scripts/trade.sh`, the `/pod:trade` skill (since 0.6.0, `references/trade.md` of the main `pod` skill), the settings in `profile.sh` (`settings`, `set`) and `/pod:setup`, `to_wei`, `duration_s` and `setting` in `lib.sh`, and `find_market` in `pod.jq`. Version 0.4.0.
 
 - Plans live in `~/.config/pod-plugin/plans/`, readable only by the user, and are deleted after an hour.
 - The nonce and the deadline are fixed at send time, not at plan time, so an approval that takes a minute still sends a valid order; the order id is therefore known once sent.

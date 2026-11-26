@@ -173,18 +173,20 @@ One reference that every skill points to: network addresses, identifiers, 10^18 
 
 ## Skills, as the user sees them
 
+Four skills (revised 2026-11-26, version 0.6.0). A skill is split off only when the user will type its name; everything the user says in words goes through one main skill, `pod`, which reads a reference file for each kind of request. The earlier seven-skill version is at git tag `hybrid-original`.
+
 | Skill | Section | Typical requests |
 |---|---|---|
+| `pod` (main skill, started by the agent) | 3 to 6 | "What do I have?", "show 0xABC…'s positions", "top movers", "NVDA order book", "buy 0.5 NVDA at 180", "cancel all my orders", "watch my positions" |
 | `/pod:setup` | 1 | "Connect my wallet", "re-test my wallet", "disconnect" |
 | `/pod:status` | 2 | "Am I connected?", "can you trade?" |
-| `/pod:account` | 3 | "What do I have?", "my open orders", "show 0xABC…'s positions" |
-| `/pod:settings` | 4 | "Stop asking me", "use a 1% band", "what are my settings?" |
-| `/pod:trade` | 4 | "Buy 0.5 NVDA at 180", "cancel all my orders", "set a stop at 170" |
-| `/pod:markets` | 5 | "Top movers", "NVDA order book", "daily bars for gold" |
-| `/pod:live` | 6 | "Watch my positions", "stream the SK Hynix book" |
-| `/pod:network` | 7 | "How busy is the network?", "show transaction 0x…" |
+| `/pod:settings` (started only by the user) | 4 | `/pod:settings approval auto`, `/pod:settings market_band_pct 1` |
 
-**Awareness on demand.** There is no session-start hook (decided 2026-11-26). The agent learns the level, the address, the cash and what it can do by running `/pod:status`, which the other skills call when they need it.
+The main skill's references are `account.md` (Section 3), `trade.md` (Section 4), `markets.md` (Section 5) and `live.md` (Section 6). Network activity (Section 7) is not built yet.
+
+`/pod:settings` sets `disable-model-invocation: true`, so the agent cannot start it. The agent may show the settings and, when the user asks for that exact change, set `approval ask`, `market_band_pct` or `default_ttl` itself; switching `approval` to `auto` is always the user's own action. This is guidance to the agent, not a lock: the scripts would accept the change from the agent.
+
+**Awareness on demand.** There is no session-start hook (decided 2026-11-26). The agent learns the level, the address, the cash and what it can do by running `status.sh` (the `/pod:status` skill), which the main skill runs first when the state is unknown.
 
 ## How it will be used
 
@@ -200,7 +202,6 @@ Hypothetical requests, to check the design covers them. Each row says what the p
 | "What's the current price?" | Market data: last traded price, mark price and oracle price, and what each one means | Which one to quote |
 | "Watch Y for the next 2 hours and if this happens, do that" | A listener on Y with `--for 2h --until "<condition>"`, run in the background, which wakes the agent when the condition holds; then the trading actions. For a stop-loss or take-profit on a position, a pod trigger does the watching on pod itself, with no listener | Deciding the condition, and the session staying open for 2 hours |
 | "Read the news and trade on your own" | Everything after the decision: find the market, check buying power, place orders, confirm the outcome, follow the position | Reading the news (pod's API has none), deciding what to trade, and the autonomy to act |
-| `/pod:reference` | shared | Loaded by the others |
 
 ## Decisions
 
