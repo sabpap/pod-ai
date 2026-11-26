@@ -6,7 +6,7 @@ argument-hint: "[what you want on pod, in words]"
 
 # pod network
 
-This skill covers everything on pod network that the user asks for in words: accounts, markets, trading and live updates. Three things have their own skills, which the user types: `/pod:setup` (connect a wallet), `/pod:status` (can the agent act right now) and `/pod:settings` (change how the agent trades).
+This skill covers everything on pod network that the user asks for in words: accounts, markets, trading and live updates. Three things have their own skills, which the user can type: `/pod:setup` (connect a wallet), `/pod:status` (can the agent act right now) and `/pod:settings` (change how the agent trades).
 
 All scripts are in `${CLAUDE_PLUGIN_ROOT}/scripts/`; always run them by that full path. Each prints one JSON object (`live.sh` prints one per line). `"ok": false` always comes with `error` and usually `fix`: tell the user both in plain words, and stop.
 
