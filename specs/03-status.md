@@ -52,7 +52,7 @@ The network calls run in parallel, so the quick check takes about one second. If
   "check": "quick",
   "network": {"name": "staging", "chain_id": 129302, "writes_open": true},
   "wallet": {"type": "keystore", "keystore": "exotic-test-1", "address": "0x035A…DA70", "present": true, "signs": null},
-  "account": {"cash_usd": "100", "withdrawable_usd": "100", "account_value_usd": "100",
+  "account": {"account_value_usd": "100", "cash_usd": "100", "unrealized_pnl_usd": "0", "withdrawable_usd": "100",
               "open_positions": 0, "open_orders": 0, "frozen": false},
   "proof": {"test_transaction": "passed 2026-11-26T13:53:55Z", "last_send": null},
   "capabilities": [
@@ -107,3 +107,7 @@ Built in [plugins/pod](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/plu
 | Only sends with the profile's own wallet are recorded | Setup's checks with a named wallet (`--keystore`, `--env`) never touch `last_send` |
 
 Tests: 22 offline unit checks; 22 read-only smoke checks covering not set up, read-only, a missing variable, a lasting refusal, an accepted send clearing it, and a passing refusal ignored. Full and quick checks on the real profile both give "ready to trade".
+
+## Change: value instead of cash in the summary line (2026-11-26)
+
+After the dev wallet opened a small NVDA perp, the line still said "$100 cash": opening a perp only holds part of the cash as collateral (margin), so cash barely moves. The line now shows the **account value** (cash plus unrealized profit or loss), at most 4 decimals so a small trade stays visible: `pod: ready to trade · 0x035A…Da70 · value $99.9971 · 1 position · 0 orders`. The `account` object adds `unrealized_pnl_usd`. Each position's details (size, prices, margin, liquidation price) belong to the Account section, not to status. Version 0.2.1.

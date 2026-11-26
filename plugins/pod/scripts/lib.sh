@@ -95,6 +95,12 @@ human() {
   echo "scale=18; $(to_dec "$1") / 10^18" | bc | sed -e 's/^\./0./' -e 's/^-\./-0./' -e '/\./ s/0*$//' -e 's/\.$//'
 }
 
+# money DECIMAL: a dollar amount for a one-line summary: at most 4 decimals, no trailing zeros.
+# 99.99666537 -> 99.9967, 100.000 -> 100. Two decimals would hide the small moves a test trade makes.
+money() {
+  LC_ALL=C printf '%.4f' "$1" | sed -e '/\./ s/0*$//' -e 's/\.$//' -e 's/^-0$/0/'
+}
+
 # bc_int EXPR: evaluate an integer expression with bc.
 bc_int() { echo "scale=0; $1" | bc | tr -d '\\\n'; }
 

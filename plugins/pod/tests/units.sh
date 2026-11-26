@@ -41,6 +41,13 @@ eq "locked account lasts"      "$(send_failure_kind -32000 'account is locked')"
 eq "nonce clash passes"        "$(send_failure_kind -32000 'nonce too low')"                "passing"
 eq "pending tx passes"         "$(send_failure_kind -32000 'Account has pending transaction')" "passing"
 
+# money: the summary line's dollar amounts
+eq "money keeps small moves"   "$(money 99.99666537511088)"   "99.9967"
+eq "money whole dollars"       "$(money 100.000000)"          "100"
+eq "money cents"               "$(money 150.93)"              "150.93"
+eq "money zero"                "$(money 0)"                   "0"
+eq "money negative"            "$(money -0.00264895718243)"   "-0.0026"
+
 # short_addr
 eq "short address"             "$(short_addr 0x035A9E2f3ED8bAAD656E66BF3f0071da40DcDa70)" "0x035A…Da70"
 

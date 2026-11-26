@@ -115,12 +115,16 @@ if $has_profile && $net_up; then
       frozen=true
       add_problem account "The account is frozen on pod (locked or waiting for recovery)." "Recovery is not part of this plugin; see pod's guide 'Recover a locked account'."
     fi
+    # Account value = cash + unrealized profit or loss. It is the "how much do I have" number:
+    # opening a perp barely moves cash, because cash is only held as collateral.
     account=$(jq -n --arg c "$(human "$cash")" \
       --arg w "$(human "$(to_dec "$(jq -r '.withdrawable_cash' "$D/balances")")")" \
       --arg v "$(human "$(to_dec "$(jq -r '.account_value' "$D/positions")")")" \
+      --arg u "$(human "$(to_dec "$(jq -r '.total_unrealized_pnl // "0"' "$D/positions")")")" \
       --argjson p "$(jq '.positions | length' "$D/positions")" \
       --argjson o "$(jq '.total_count // (.orders | length)' "$D/orders")" --argjson f "$frozen" \
-      '{cash_usd: $c, withdrawable_usd: $w, account_value_usd: $v, open_positions: $p, open_orders: $o, frozen: $f}')
+      '{account_value_usd: $v, cash_usd: $c, unrealized_pnl_usd: $u, withdrawable_usd: $w,
+        open_positions: $p, open_orders: $o, frozen: $f}')
   else
     add_problem account "Pod answered, but the account could not be read." "Try again in a moment."
   fi
@@ -178,7 +182,9 @@ case "$level" in
   "not set up") summary_line="pod: not set up · run /pod:setup to connect a wallet" ;;
   problem) summary_line="pod: problem · $(echo "$problems" | jq -r '.[0].error')" ;;
   "connected, read-only") summary_line="pod: read-only · $reason · $(short_addr "$ADDR")" ;;
-  *) summary_line="pod: $level · $(short_addr "$ADDR") · \$$(echo "$account" | jq -r '.cash_usd') cash · $(echo "$account" | jq -r '.open_positions') positions · $(echo "$account" | jq -r '.open_orders') orders" ;;
+  *)
+    npos=$(echo "$account" | jq -r '.open_positions'); nord=$(echo "$account" | jq -r '.open_orders')
+    summary_line="pod: $level · $(short_addr "$ADDR") · value \$$(money "$(echo "$account" | jq -r '.account_value_usd')") · $npos position$([ "$npos" = 1 ] || echo s) · $nord order$([ "$nord" = 1 ] || echo s)" ;;
 esac
 
 jq -n --arg level "$level" --arg mode "$mode" --arg line "$summary_line" \
