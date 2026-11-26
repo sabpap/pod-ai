@@ -51,7 +51,7 @@ is() {   # is NAME WANT MODE TOOL TEXT [PATH]
 reason_has() {   # reason_has NAME PATTERN MODE TOOL TEXT
   local name="$1" pat="$2"; shift 2
   decide "$@" >/dev/null   # not in $(...), so REASON stays set here
-  if printf '%s' "$REASON" | grep -Eq "$pat"; then pass=$((pass+1)); echo "ok   $name"
+  if printf '%s' "$REASON" | grep -Eiq "$pat"; then pass=$((pass+1)); echo "ok   $name"
   else failed=$((failed+1)); echo "FAIL $name: reason was: $REASON"; fi
 }
 
@@ -110,6 +110,34 @@ is "Monitor tool"                  ask $D Monitor "pod trade send $PLAN"
 is "PowerShell tool"               ask $D PowerShell "pod trade send $PLAN"
 reason_has "the question shows the plan" 'buy 0\.5 NVDA perp at \$150.*value \$75.*fee \$0\.03.*margin \$3\.75.*rounded' $D Bash "pod trade send $PLAN"
 reason_has "an unknown plan still asks"  'sends a transaction from your pod wallet' $D Bash "pod trade send p00000000"
+
+# Words that only read like a send pass: trade, setup and wallet count only after pod or a stand-in
+is "commit message with trade send" none $D Bash "git commit -m 'trade send fix'"
+is "commit message, --send flag"   none $D Bash "git commit -m \"add --send to the trade form\""
+is "npm setup with --yes"          none $D Bash "npm run setup -- --yes"
+is "another project's setup.sh"    none $D Bash "./setup.sh --yes"
+is "grep for trade send"           none $D Bash "grep -rn 'trade send' docs/"
+is "echo wallet send"              none $D Bash "echo wallet send"
+# ...while every way of standing in for pod still asks
+is "alias for pod"                 ask $D Bash "alias p=pod; p trade send $PLAN"
+is "function around pod"           ask $D Bash "f() { pod \"\$@\"; }; f trade send $PLAN"
+is "pod built by substitution"     ask $D Bash "\$(printf p)od trade send $PLAN"
+is "pod built by backticks"        ask $D Bash "\`echo pod\` trade send $PLAN"
+is "\${var} for pod"               ask $D Bash "P=pod; \${P} trade send $PLAN"
+is "the setup script by path"      ask $D Bash "POD_CLI=1 /repo/cli/libexec/setup.sh --keystore dev --yes"
+is "commit message naming pod asks" ask $D Bash "git commit -m 'pod trade send fix'"
+
+# The prompt is the only question: it must say what is sent
+cat > "$H/plans/p00000002.json" <<'EOF'
+{"plan_id": "p00000002", "summary": "buy 0.066361 NVDA perp at market, no worse than $153.7",
+ "preview": {"order_value_usd": "10.19", "value_at_current_price_usd": "9.99", "fee_usd": "0.0045",
+             "margin_needed_usd": "0.51", "free_margin_after_usd": "95.2"},
+ "notes": ["size 0.066361 = $10 at $150.69 (the current price)", "worst price $153.7: the current price $150.69 plus 2%"]}
+EOF
+reason_has "market order: value now and worst case" 'Send this trade from your pod wallet\? buy 0\.066361 NVDA perp at market.*Value about \$9\.99 at the current price, at most \$10\.19 at the worst price\. Fee \$0\.0045\. Margin \$0\.51, free margin after \$95\.2\.' $D Bash "pod trade send p00000002"
+reason_has "market order: every note"    'Note: size 0\.066361 = \$10 at \$150\.69.*Note: worst price \$153\.7.*Approve to send it; deny and nothing is sent' $D Bash "pod trade send p00000002"
+reason_has "setup test says what it sends" 'setup test transaction.*cannot fill.*two real transactions' $D Bash "pod setup test --yes"
+reason_has "one-step send shows the command" 'Command: pod trade buy NVDA 1 --price 150 --send' $D Bash "pod trade buy NVDA 1 --price 150 --send"
 
 # Switching approval off always asks
 is "approval auto asks"            ask $D Bash "pod settings set approval auto"

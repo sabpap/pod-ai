@@ -12,7 +12,7 @@ The same functions as the hybrid plugin (`3-plugin`), delivered as a product: on
 | `cli/libexec/` | The scripts, moved from `plugins/pod/scripts/`. Each starts with its command's manual in `#:` lines |
 | `cli/install.sh` | Links `pod` into `~/.local/bin` (or `--bin DIR`); `--uninstall` removes the link |
 | `cli/tests/` | `units.sh`, `live-units.mjs`, `smoke.sh`, `live-reconnect.sh`, `contract.sh`, `install.sh` |
-| `plugins/pod/skills/` | `pod` (everything said in words), `setup`, `status`, `settings` (started only by the person) |
+| `plugins/pod/skills/` | `use` (`/pod:use`: everything said in words), `setup`, `status`, `settings` (started only by the person) |
 | `plugins/pod/hooks/` | `hooks.json` and `pod-guard.sh`, the approval hook |
 | `plugins/pod/tests/guard.sh` | The hook's unit tests |
 
@@ -46,7 +46,7 @@ The same functions as the hybrid plugin (`3-plugin`), delivered as a product: on
 | Exit codes | 0 ok · 1 failed (the JSON says why) · 2 usage (unknown command or option, or a script run without `pod`) · 3 not sent (the person said no at the terminal question) · 130 interrupted |
 | Manual | `pod --help` and `pod COMMAND --help`, printed from the `#:` lines at the top of `cli/pod` and of the command's script. `contract.sh` fails when a script accepts an option its manual does not name |
 | Entry point | Every script stops with exit 2 unless `POD_CLI=1`, which `cli/pod` sets. One entry point gives one manual and one text for the hook to watch |
-| Version | `pod --version` prints `pod 1.0.0`. The skills require 1.0.0 or later |
+| Version | `pod --version` prints `pod 1.1.0`; the plugin is 1.1.0 too. The skills require 1.1.0 or later. 1.1.0: the skill `pod` became `use`, the doubled approval question went, the hook reads fewer false sends |
 | State | Unchanged: `~/.config/pod-plugin`, or `POD_PLUGIN_HOME`. The same wallet setup works on every branch |
 | Person at a terminal | With approval `ask`, `pod trade send` (and `--send`) shows the plan and asks `Send it? [y/N]` when stdin and stdout are a terminal. Without a terminal it does not ask |
 
@@ -64,11 +64,11 @@ The same functions as the hybrid plugin (`3-plugin`), delivered as a product: on
 
 In permission modes `bypassPermissions` and `dontAsk`, every "ask" above becomes "deny", with a reason that tells Claude nothing was run and the person must run the command or change mode.
 
-**How it reads a command.** It drops quotes and backslashes, turns shell punctuation (`; | & ( ) < > { } \` $ = , :`) into spaces, lower-cases the text and looks at the words: a `trade` (or `trade.sh`) word followed anywhere later by `send` or `--send`; a `setup`, `setup.sh` or `test-transaction.sh` word followed by `--yes`; and so on. So it does not matter where the command sits (pipeline, `&&`, `;`, subshell, `$(...)`, new line), what precedes it (env assignments, `env`, `nohup`, `xargs`), which path names `pod`, or whether it is wrapped in `bash -c '...'` or split with quotes (`p''od`). It errs on the side of asking: `git commit -m "trade send fix"` asks too.
+**How it reads a command.** It drops quotes and backslashes, turns shell punctuation (`; | & ( ) < > { } \` $ = , :`) into spaces, lower-cases the text and looks at the words: a `trade` (or `trade.sh`) word followed anywhere later by `send` or `--send`; a `setup`, `setup.sh` or `test-transaction.sh` word followed by `--yes`; and so on. So it does not matter where the command sits (pipeline, `&&`, `;`, subshell, `$(...)`, new line), what precedes it (env assignments, `env`, `nohup`, `xargs`), which path names `pod`, or whether it is wrapped in `bash -c '...'` or split with quotes (`p''od`). A `trade`, `setup` or `wallet` word counts only after a word that is `pod` (by any path) or may stand for it: a variable (`$x`, `${x}`) or a command substitution (`$(...)`, backticks) is read as the word `__var__` first, which counts like `pod`. So `x=pod; $x trade send`, `alias p=pod; p trade send`, `f() { pod "$@"; }; f trade send` and `$(printf p)od trade send` ask (pod or a stand-in comes first), while `git commit -m "trade send fix"`, `npm run setup -- --yes` and another project's `./setup.sh --yes` pass. The scripts count on their own: `trade.sh`, `wallet.sh`, `test-transaction.sh`, and `setup.sh` under a `libexec/` path. It still errs on the side of asking: `git commit -m "pod trade send fix"` asks.
 
 **File tools.** A `Write`, `Edit`, `MultiEdit` or `NotebookEdit` on a path in pod's folder always asks. Elsewhere, the new text is read like a command, so a script that would send asks before it is written; `.md`, `.txt`, `.rst` and `.html` files pass, because prose names commands without running them.
 
-**The question.** For `pod trade send PLAN_ID` the reason names the plan from `plans/PLAN_ID.json`: its summary, value, fee, margin and notes. Claude Code shows it in its permission prompt, labelled `[plugin:pod]`.
+**The question.** It is the only approval question in Claude Code: the skills tell the user the plan in words and then run the send, without a question of their own. For `pod trade send PLAN_ID` the reason is built from `plans/PLAN_ID.json`: "pod: Send this trade from your pod wallet? <summary>. Value $X." (for a market order: "Value about $X at the current price, at most $Y at the worst price."), "Fee $F.", "Margin $M, free margin after $R." (perps; cash or tokens available on spot), one "Note: …." per note, "(plan p…)", and "Approve to send it; deny and nothing is sent." For the setup test it says what the test sends; for anything else it shows the command. Claude Code shows it in its permission prompt, labelled `[plugin:pod]`. If the person denies it, or the hook denies in a mode that cannot ask, the skill says nothing was sent and stops; it never retries another way.
 
 **Fail closed.** No `jq`: the hook scans the raw input and still asks or denies. Input that is not JSON: scanned the same way. An unreadable or broken profile counts as approval `ask`.
 
@@ -118,7 +118,8 @@ Not measured: the interactive prompt itself (it needs a person), and the hook lo
 | H1 | bypassPermissions, where the docs do not promise a prompt | **Deny.** `permission_mode` tells the hook the mode, so it never relies on a prompt it cannot see |
 | H2 | dontAsk | **Deny**, with a reason; Claude Code would deny the "ask" anyway |
 | H3 | Headless `-p` | Arrives as `default`, so the hook answers "ask"; Claude Code turns it into a denial, unless a `--permission-prompt-tool` or SDK `canUseTool` callback answers, in which case that host is the approver |
-| H4 | Two questions per trade in Claude Code (the skill's AskUserQuestion, then the permission prompt) | **Kept.** The first is the conversation with the full preview; the second is the gate the agent cannot skip. The hook's reason repeats the plan so the second is quick |
+| H4 | Two questions per trade in Claude Code (the skill's AskUserQuestion, then the permission prompt) | **One question** (revised in 1.1.0). The skills tell the plan in words and run the send; Claude Code's prompt, which the agent cannot skip, is the only question, and its text carries the whole plan. The same holds for the setup test transaction and for switching approval to auto |
+| H8 | False sends from words alone (`git commit -m "trade send fix"`) | Since 1.1.0 a `trade`, `setup` or `wallet` word counts only after `pod` or a stand-in for it (variable, command substitution), or as the script itself. Every earlier bypass test still asks, plus alias, function, `$(printf p)od` and backtick forms |
 | H5 | The setup test transaction | Guarded like a trade: it sends two real transactions |
 | H6 | Direct scripts | Refuse without `POD_CLI=1`, and the hook asks on `POD_CLI`, on `trade.sh`/`wallet.sh` with `send`, and on `test-transaction.sh --yes` |
 | H7 | A plugin `bin/pod` | Not used: the CLI must stand alone, and the plugin ships no code for pod's functions |
@@ -127,7 +128,7 @@ Not measured: the interactive prompt itself (it needs a person), and the hook lo
 
 The hook guards the product's send path, not the wallet.
 
-- **Obfuscated text**: `echo cG9kIHRyYWRlIHNlbmQ= | base64 -d | sh`, `eval` of built strings, a script written in one step under an innocent name with no pod words in it (for example a Python file that assembles the words at run time), or a program in another language that calls the scripts.
+- **Obfuscated text**: `echo cG9kIHRyYWRlIHNlbmQ= | base64 -d | sh`, `eval` of built strings, a script written in one step under an innocent name with no pod words in it (for example a Python file that assembles the words at run time), or a program in another language that calls the scripts. Since 1.1.0 also a `pod` that reaches the command line from a file or another program without `$(...)` or backticks, for example `xargs -I{} sh -c "{} trade send p…" < name.txt`: the word before `trade` is then neither `pod` nor a stand-in.
 - **Its own transaction**: an agent that writes its own signing code (`cast` under another name, a Node or Python library) and posts to pod's RPC with `curl`, reading the key from a place the hook does not name. The hook catches the obvious forms (`cast send`, `eth_sendRawTransaction`, the Keychain service name), not every form.
 - **Outside Claude Code**: the hook exists only in Claude Code. Another agent harness, or Claude Code without the plugin, gets no prompt; the CLI's terminal question needs a terminal.
 - **Mods**: an installed mod that approves `tool.check` can skip a hook's prompt on setups without managed settings (see the docs row above).

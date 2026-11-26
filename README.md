@@ -13,7 +13,7 @@ The other approaches are in branches `1-raw`, `2-manual` and `3-plugin`, and are
 1. **Install the command.** From this folder:
    ```
    cli/install.sh                 # links pod into ~/.local/bin (or: cli/install.sh --bin DIR)
-   pod --version                  # pod 1.0.0
+   pod --version                  # pod 1.1.0
    ```
    `~/.local/bin` must be on your PATH; the installer says so if it is not. pod needs `cast` (Foundry), `jq`, `curl` and `bc`; `pod live` also needs Node.js 22 or later. `cli/install.sh --uninstall` removes the link.
 2. **Add the plugin** (a person does this; Claude Code's auto mode blocks an agent from installing plugins):
@@ -72,7 +72,7 @@ Because every pod action is one command with a stable shape, a few rules remove 
 }
 ```
 
-Reading and planning now run without a prompt. Sending still asks: the plugin's hook answers "ask" for `pod trade send` while the approval setting is "ask", and an allow rule does not override it (measured in headless runs: a hook's "ask" was not skipped by a matching allow rule). Try it: ask the agent to buy $10 of NVDA. It plans without a prompt, asks you with its own question, and then Claude Code shows its permission prompt, labelled `[plugin:pod]`, with the plan's summary, value, fee and margin.
+Reading and planning now run without a prompt. Sending still asks: the plugin's hook answers "ask" for `pod trade send` while the approval setting is "ask", and an allow rule does not override it (measured in headless runs: a hook's "ask" was not skipped by a matching allow rule). Try it: ask the agent to buy $10 of NVDA. It plans without a prompt, tells you the plan, and runs the send; Claude Code then asks you once, in its permission prompt labelled `[plugin:pod]`, with the plan's summary, value, fee, margin and every note. Deny it and nothing is sent.
 
 ## The approval hook
 
@@ -82,18 +82,20 @@ Reading and planning now run without a prompt. Sending still asks: the plugin's 
 - **switch approval off** (`pod settings set approval auto`), always;
 - touch **pod's own files** or the **wallet directly** (`cast send`, `eth_sendRawTransaction`, the Keychain password), always.
 
-Reading and planning pass untouched. It finds a send wherever it sits: in a pipeline, after `&&` or `;`, behind env assignments, through an absolute path to `pod`, inside `bash -c "..."`, split by quotes, or through the scripts behind `pod` (which also refuse to run without `pod`). A script file that would send asks before it is written.
+Reading and planning pass untouched. It finds a send wherever it sits: in a pipeline, after `&&` or `;`, behind env assignments, through an absolute path to `pod`, inside `bash -c "..."`, split by quotes, through a variable, alias or function standing for `pod`, or through the scripts behind `pod` (which also refuse to run without `pod`). A script file that would send asks before it is written.
+
+**One question per send.** The agent tells you the plan, then runs the send; Claude Code's prompt is the only question. For a trade it reads, for example: "pod: Send this trade from your pod wallet? buy 0.066361 NVDA perp at market, no worse than $153.7. Value about $9.99 at the current price, at most $10.19 at the worst price. Fee $0.0045. Margin $0.51, free margin after $95.2. Note: size 0.066361 = $10 at $150.69 (the current price). … (plan p…) Approve to send it; deny and nothing is sent." If you deny it, the agent says nothing was sent and stops. With the approval setting "auto", trades go through without a question; switching to "auto" always asks.
 
 **Permission modes.** In default, acceptEdits, plan and auto modes, Claude Code shows its prompt (auto mode's classifier does not decide a hook's "ask"). In `dontAsk` and `bypassPermissions`, the hook answers **deny**: the docs do not promise that bypassPermissions shows a hook's question, so nothing is sent unasked. In headless `claude -p`, nobody can answer, so Claude Code denies the call. Sources and measurements: [specs/08-cli-and-hook.md](specs/08-cli-and-hook.md).
 
-**What still gets around it.** The hook guards the product's send path, not the wallet. An agent can still hide a send from a text check (`base64 -d | sh`, `eval`, a program that assembles the command at run time), or write its own signing and `curl` code that the hook does not recognise. An installed Claude Code mod can approve past a hook on setups without managed settings. And outside Claude Code there is no hook at all. The portable next step, not built here: a confirmation the CLI opens **outside the agent's reach**, such as a macOS dialog or Touch ID before signing.
+**What still gets around it.** The hook guards the product's send path, not the wallet. An agent can still hide a send from a text check (`base64 -d | sh`, `eval`, a program that assembles the command at run time, or `pod` read from a file through `xargs`), or write its own signing and `curl` code that the hook does not recognise. An installed Claude Code mod can approve past a hook on setups without managed settings. And outside Claude Code there is no hook at all. The portable next step, not built here: a confirmation the CLI opens **outside the agent's reach**, such as a macOS dialog or Touch ID before signing.
 
 ## Architecture, strengths and weaknesses
 
 | Lives in | What | Holds |
 |---|---|---|
 | **The CLI** (`cli/`) | What is true and what is done | Profile, settings, plans, signing, sending, the manual (`--help`), the JSON contract and exit codes |
-| **The plugin** (`plugins/pod/`) | How the agent and the person meet in Claude Code | Skills: `pod`, `setup`, `status`, `settings` (person only); the approval hook |
+| **The plugin** (`plugins/pod/`) | How the agent and the person meet in Claude Code | Skills: `use` (`/pod:use`), `setup`, `status`, `settings` (person only); the approval hook |
 
 Expected to score about the same as `3-plugin` on agent efficiency: the agent runs the same tested scripts and reads about the same reference, from `--help` instead of a skill.
 
@@ -101,15 +103,15 @@ Expected to score about the same as `3-plugin` on agent efficiency: the agent ru
 - **Approval is enforced**, not suggested: Claude Code itself asks before a send, whatever the agent decides, and switching approval off always asks.
 - **Use outside Claude Code**: a person in a terminal, or any shell agent, with the same commands and the same profile.
 - **A manual that cannot drift**: each command's help sits at the top of the script that implements it, and a test fails when a script accepts an option its manual does not name.
-- **A versioned contract**: JSON on stdout, documented exit codes, `pod --version`; the skills require 1.0.0 or later.
+- **A versioned contract**: JSON on stdout, documented exit codes, `pod --version`; the skills require 1.1.0 or later.
 - **A base for an MCP server later**: each command is already one call with JSON out.
 
 **Costs**
 - **A second thing to install and version.** The plugin does nothing without the command.
 - **Skill and CLI can be at different versions.** The skills check `pod --version`, but only for a minimum.
 - **The hook only works in Claude Code.** Other harnesses rely on the agent asking, or on a person at a terminal.
-- **Two questions per trade in Claude Code**: the skill's Approve / Deny question, then Claude Code's permission prompt.
-- **The hook errs on the side of asking.** Any command whose words read like a send (for example `git commit -m "trade send fix"`) asks too, and so do edits to pod's own scripts while the plugin is enabled.
+- **The question lives in Claude Code's permission prompt.** It is the only approval question, and it cannot be skipped by the agent, but it is a plain-text prompt rather than a designed question with options.
+- **The hook errs on the side of asking.** A command that names pod and reads like a send asks, even in a commit message (`git commit -m "pod trade send fix"`), and so do edits to pod's own scripts while the plugin is enabled. Words alone, such as `git commit -m "trade send fix"`, pass.
 
 ## Tests
 

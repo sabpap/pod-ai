@@ -95,7 +95,7 @@ One JSON object:
 
 ## Implementation notes (2026-11-26)
 
-Built in [cli](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/cli/): `pod account` (`cli/libexec/account.sh`), `cli/libexec/pod.jq` (exact conversion of pod's numbers on digit strings, no floating point), `since_us` in `lib.sh`, and the `/pod:account` skill (in branch `4-cli`: the manual `pod account --help` and the one `pod` skill). Version 0.3.0.
+Built in [cli](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/cli/): `pod account` (`cli/libexec/account.sh`), `cli/libexec/pod.jq` (exact conversion of pod's numbers on digit strings, no floating point), `since_us` in `lib.sh`, and the `/pod:account` skill (in branch `4-cli`: the manual `pod account --help` and the one `/pod:use` skill). Version 0.3.0.
 
 | Finding | Effect |
 |---|---|

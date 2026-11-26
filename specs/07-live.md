@@ -64,7 +64,7 @@ Account channels default to the connected wallet and accept any address.
 
 ## Implementation notes (2026-11-26)
 
-Built in [cli](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/cli/): `pod live` (`cli/libexec/live.sh`) (arguments, names, accounts, Node check, list and stop), `cli/libexec/live.mjs` (connection, catch-up, reconnects, throttle, conditions, registry), `cli/libexec/live-lib.mjs` (decoding with exact BigInt amounts, conditions, descriptions), and the `/pod:live` skill (in branch `4-cli`: the manual `pod live --help` and the one `pod` skill). Version 0.5.0.
+Built in [cli](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/cli/): `pod live` (`cli/libexec/live.sh`) (arguments, names, accounts, Node check, list and stop), `cli/libexec/live.mjs` (connection, catch-up, reconnects, throttle, conditions, registry), `cli/libexec/live-lib.mjs` (decoding with exact BigInt amounts, conditions, descriptions), and the `/pod:live` skill (in branch `4-cli`: the manual `pod live --help` and the one `/pod:use` skill). Version 0.5.0.
 
 An independent review found seven problems, all fixed before the first commit: `--raw` with several markets printed only the first (now one throttle per market); `--for` past 24.8 days stopped at once (Node's timer limit; now waited out in steps, and `--for` is capped at 30 days); repeated state pushes were printed twice (now dropped); a refused first subscription printed a notice before the `watching` line and broke later reconnect notices, and a state channel's "not caught up yet" (995) was taken for "too old" (now it waits and asks again); a price of 0 counted as a price.
 
