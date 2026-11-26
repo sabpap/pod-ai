@@ -6,6 +6,8 @@
 # Plan an action (nothing is sent):
 #   trade.sh buy|sell MARKET SIZE --price P [--maker-only] [--ioc] [--reduce-only] [--rests 1h] [--spot]
 #   trade.sh buy|sell MARKET SIZE --market [--max-price P | --min-price P | --band 1.5] [--reduce-only] [--spot]
+#     SIZE is in units of the asset (0.5 NVDA). For an amount of money, give --usd 10 instead of SIZE:
+#     the size is worked out from the limit price, or from the current price for a market order.
 #   trade.sh close MARKET [--percent 50] [--price P | --band 1.5]
 #   trade.sh edit ORDER_ID [--price P] [--size S]
 #   trade.sh cancel ORDER_ID
@@ -76,16 +78,34 @@ market_by_id() {   # market_by_id BOOK: like load_market, from an order's market
   load_market "$1" false
 }
 
-ref_price() {   # the market's current price in wei: mark price for perps, last price for spot
+# The market's current price in wei: the mark price for perps, the last price for spot. Pod sends 0
+# for a price it does not have (e.g. a halted market), which counts as none.
+REF_JQ='.markets[] | select(.orderbook_id == $id) | [.mark_price, .last_clearing_price]
+  | map(select(. != null and . != "0" and . != "0x0")) | .[0] // empty'
+
+# ref_price VAR: set VAR to the current price, or fail. It sets a variable rather than printing, so it
+# never runs inside $(...), where its failure message would be captured and lost.
+ref_price() {
   get /clob/markets/stats "$T/stats"
-  local p
-  p=$(jq -r --arg id "$BOOK" '.markets[] | select(.orderbook_id == $id) | (.mark_price // .last_clearing_price // empty)' "$T/stats")
-  [ -n "$p" ] || fail trade "$MNAME has no current price to work from." "Give an explicit price."
-  to_dec "$p"
+  local _p
+  _p=$(jq -r --arg id "$BOOK" "$REF_JQ" "$T/stats")
+  [ -n "$_p" ] || fail trade "$MNAME has no current price to work from." "Give an explicit price."
+  printf -v "$1" '%s' "$(to_dec "$_p")"
 }
 
-num_wei() {   # num_wei VALUE WHAT: a user's decimal as wei, or fail
-  to_wei "$1" || fail trade "$2 '$1' is not a plain positive number (digits and at most one point, up to 18 decimals)."
+# ref_maybe VAR: like ref_price, but leaves VAR empty instead of failing. For optional preview fields.
+ref_maybe() {
+  local _p=""
+  _p=$(curl -sS --fail --max-time 10 "$POD_REST/clob/markets/stats" 2>/dev/null | jq -r --arg id "$BOOK" "$REF_JQ" 2>/dev/null) || _p=""
+  if [ -n "$_p" ]; then printf -v "$1" '%s' "$(to_dec "$_p")"; else printf -v "$1" '%s' ""; fi
+}
+
+# num_wei VAR VALUE WHAT: set VAR to a user's decimal as wei, or fail. It sets a variable rather than
+# printing, so it never runs inside $(...), where a failure message would be captured and lost.
+num_wei() {
+  local _w
+  _w=$(to_wei "$2") || fail trade "$3 '$2' is not a plain positive number (digits and at most one point, up to 18 decimals)."
+  printf -v "$1" '%s' "$_w"
 }
 
 floor_to() { bc_int "$1 / $2 * $2"; }
@@ -125,10 +145,10 @@ duration_text() {   # 86400 -> "1 day"
   else echo "$s seconds"; fi
 }
 
-rest_us() {   # rest_us WHEN DEFAULT: resting time in microseconds
-  local s; s=$(duration_s "${1:-$2}") || fail trade "'${1:-$2}' is not a time such as 10m, 1h or 7d."
-  { [ "$s" -ge 60 ] && [ "$s" -le 2592000 ]; } || fail trade "Resting time must be between 1m and 30d."
-  echo $(( s * 1000000 ))
+rest_us() {   # rest_us VAR WHEN DEFAULT: set VAR to the resting time in microseconds, or fail
+  local _s; _s=$(duration_s "${2:-$3}") || fail trade "'${2:-$3}' is not a time such as 10m, 1h or 7d."
+  { [ "$_s" -ge 60 ] && [ "$_s" -le 2592000 ]; } || fail trade "Resting time must be between 1m and 30d."
+  printf -v "$1" '%s' $(( _s * 1000000 ))
 }
 
 usd() { local v; v=$(human "$1"); case "$v" in -*) echo "-\$${v#-}" ;; *) echo "\$$v" ;; esac; }
@@ -287,13 +307,15 @@ export SUBMIT_ORDER_SIG="$SUBMIT_ORDER" UPDATE_SIG="$UPDATE" SUBMIT_TRIGGER_SIG=
 
 # --- following ------------------------------------------------------------------------------------------------
 
+# These two run inside $(...) while following an order, so they must not stop the script: a passing
+# REST error counts as "not known yet" and the follow loop asks again.
 order_state() {   # order_state BOOK ID: the order as JSON, or empty
-  get "/clob/orders/$ADDR?orderbook=$1&limit=100" "$T/os"
+  curl -sS --fail --max-time 15 -o "$T/os" "$POD_REST/clob/orders/$ADDR?orderbook=$1&limit=100" 2>/dev/null || return 0
   jq -c --arg id "$(echo "$2" | tr 'A-F' 'a-f')" '.orders[] | select((.order_id | ascii_downcase) == $id)' "$T/os" | head -1
 }
 
 activity_reject() {   # activity_reject ID: a modify_reject or cancel_reject reason for the id, or empty
-  get "/clob/activity/$ADDR?limit=100&activity_types=modify_reject,cancel_reject" "$T/ar" 2>/dev/null || return 0
+  curl -sS --fail --max-time 15 -o "$T/ar" "$POD_REST/clob/activity/$ADDR?limit=100&activity_types=modify_reject,cancel_reject" 2>/dev/null || return 0
   jq -r --arg id "$(echo "$1" | tr 'A-F' 'a-f')" '[.activity // {} | to_entries[] | .value[] | select((.id | ascii_downcase) == $id) | .why][0] // empty' "$T/ar"
 }
 
@@ -394,11 +416,12 @@ do_follow() {   # do_follow PLAN_ID TIMEOUT_S
 
 ACTION="${1:-}"; shift || true
 POS=(); PRICE=""; SIZE_OPT=""; MARKET_ORDER=false; MAX_PRICE=""; MIN_PRICE=""; BAND=""; MAKER=false; IOC=false
-REDUCE=false; RESTS=""; SPOT=false; PERCENT=""; TRIG_PRICE=""; LIMIT_PRICE=""; SEND=false; TIMEOUT=30
+REDUCE=false; RESTS=""; SPOT=false; PERCENT=""; TRIG_PRICE=""; LIMIT_PRICE=""; SEND=false; TIMEOUT=30; USD=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --price) PRICE="${2:-}"; shift 2 ;;
     --size) SIZE_OPT="${2:-}"; shift 2 ;;
+    --usd) USD="${2:-}"; shift 2 ;;
     --market) MARKET_ORDER=true; shift ;;
     --max-price) MAX_PRICE="${2:-}"; shift 2 ;;
     --min-price) MIN_PRICE="${2:-}"; shift 2 ;;
@@ -422,15 +445,15 @@ arg() { echo "${POS[$1]:-}"; }
 # --- actions ------------------------------------------------------------------------------------------------
 
 plan_order() {   # buy | sell
-  local side="$1" q size_in size p_in price worst flags=0 otype=0 rest val fee rate margin free summary ref band
+  local side="$1" q size_in size p_in price worst flags=0 otype=0 rest val fee rate margin free summary ref="" band
   q=$(arg 0); size_in=$(arg 1)
-  [ -n "$q" ] && [ -n "$size_in" ] || fail trade "Usage: trade.sh $side MARKET SIZE --price P, or --market."
+  [ -n "$q" ] || fail trade "Usage: trade.sh $side MARKET SIZE --price P, or --market; --usd AMOUNT instead of SIZE for an amount of money."
+  if [ -n "$USD" ]; then
+    [ -z "$size_in" ] || fail trade "Give either a SIZE in units or --usd for an amount of money, not both."
+  else
+    [ -n "$size_in" ] || fail trade "Usage: trade.sh $side MARKET SIZE --price P, or --market; --usd AMOUNT instead of SIZE for an amount of money."
+  fi
   need_wallet; load_market "$q" "$SPOT"
-  size=$(num_wei "$size_in" "Size")
-  local rsize; rsize=$(floor_to "$size" "$LOT")
-  [ "$rsize" != "$size" ] && note "size $size_in → $(human "$rsize") (rounded down to the market's step of $(human "$LOT"))"
-  [ "$(bc_int "$rsize > 0")" = 1 ] || fail trade "Size $size_in is smaller than $MNAME's smallest step ($(human "$LOT"))."
-  size=$rsize
 
   if $MARKET_ORDER; then
     [ -z "$PRICE" ] || fail trade "Give either --price (limit order) or --market, not both."
@@ -439,27 +462,44 @@ plan_order() {   # buy | sell
     if [ -n "$MAX_PRICE$MIN_PRICE" ]; then
       [ "$side" = buy ] && [ -n "$MIN_PRICE" ] && fail trade "A buy takes --max-price, not --min-price."
       [ "$side" = sell ] && [ -n "$MAX_PRICE" ] && fail trade "A sell takes --min-price, not --max-price."
-      p_in="$MAX_PRICE$MIN_PRICE"; worst=$(num_wei "$p_in" "Price")
+      p_in="$MAX_PRICE$MIN_PRICE"; num_wei worst "$p_in" "Price"
       price=$(round_price "$worst" "$side")
       [ "$price" != "$worst" ] && note "worst price $p_in → $(human "$price") (rounded to the market's step, never worse than asked)"
     else
       band="${BAND:-$(setting market_band_pct)}"; check_band "$band"
-      ref=$(ref_price)
+      ref_price ref
       price=$(band_price "$ref" "$side" "$band")
       note "worst price $(usd "$price"): the current price $(usd "$ref") $([ "$side" = buy ] && echo plus || echo minus) $band%"
     fi
   else
     [ -n "$PRICE" ] || fail trade "A limit order needs --price; use --market to trade at the current price."
     [ -z "$MAX_PRICE$MIN_PRICE$BAND" ] || fail trade "--max-price, --min-price and --band are for market orders."
-    p_in=$(num_wei "$PRICE" "Price")
+    num_wei p_in "$PRICE" "Price"
     price=$(round_price "$p_in" "$side")
     [ "$price" != "$p_in" ] && note "price $PRICE → $(human "$price") (rounded $([ "$side" = buy ] && echo down || echo up) to the market's step of $(human "$TICK"), so it never trades worse than asked)"
     [ "$(bc_int "$price > 0")" = 1 ] || fail trade "Price $PRICE rounds to zero."
   fi
+
+  # The size: in units as given, or worked out from an amount of money. A limit order is sized at its
+  # price; a market order at the current price, since its worst price is only a cap.
+  if [ -n "$USD" ]; then
+    local usd_wei basis
+    num_wei usd_wei "$USD" "Amount"
+    if [ "$otype" = 1 ]; then [ -n "$ref" ] || ref_price ref; basis=$ref; else basis=$price; fi
+    size=$(floor_to "$(bc_int "$usd_wei * 10^18 / $basis")" "$LOT")
+    [ "$(bc_int "$size > 0")" = 1 ] || fail trade "\$$USD buys less than $MNAME's smallest step ($(human "$LOT") at $(usd "$basis"))."
+    note "size $(human "$size") = \$$USD at $(usd "$basis")$([ "$otype" = 1 ] && echo " (the current price)"), rounded down to the market's step of $(human "$LOT")"
+  else
+    num_wei size "$size_in" "Size"
+    local rsize; rsize=$(floor_to "$size" "$LOT")
+    [ "$rsize" != "$size" ] && note "size $size_in → $(human "$rsize") (rounded down to the market's step of $(human "$LOT"))"
+    [ "$(bc_int "$rsize > 0")" = 1 ] || fail trade "Size $size_in is smaller than $MNAME's smallest step ($(human "$LOT"))."
+    size=$rsize
+  fi
   $MAKER && $IOC && fail trade "Pod refuses maker-only together with immediate-or-cancel."
   $REDUCE && [ "$MTYPE" != perp ] && fail trade "Reduce-only exists on perp markets only."
   $REDUCE && flags=$(( flags | FLAG_REDUCE_ONLY )); $IOC && flags=$(( flags | FLAG_IOC )); $MAKER && flags=$(( flags | FLAG_POST_ONLY ))
-  rest=$(rest_us "$RESTS" "$(setting default_ttl)")
+  rest_us rest "$RESTS" "$(setting default_ttl)"
 
   val=$(bc_int "$size * $price / 10^18")
   [ "$(bc_int "$MIN_NOTIONAL > 0 && $val < $MIN_NOTIONAL")" = 1 ] && fail trade "The order is worth $(usd "$val"); $MNAME's minimum is $(usd "$MIN_NOTIONAL")."
@@ -485,6 +525,10 @@ plan_order() {   # buy | sell
       preview=$(jq -n --arg v "$(human "$val")" --arg f "$(human "$fee")" --arg h "$(human "$(to_dec "$held")")" \
         '{order_value_usd: $v, fee_usd: $f, tokens_available: $h}')
     fi
+  fi
+  if [ "$otype" = 1 ]; then   # a market order's value above is at its worst price; add it at today's price
+    [ -n "$ref" ] || ref_maybe ref
+    [ -z "$ref" ] || preview=$(echo "$preview" | jq --arg c "$(human "$(bc_int "$size * $ref / 10^18")")" '. + {value_at_current_price_usd: $c}')
   fi
   local fl; fl=$(jq -n --argjson m "$MAKER" --argjson i "$IOC" --argjson r "$REDUCE" '[(if $m then "maker-only" else empty end), (if $i then "immediate-or-cancel" else empty end), (if $r then "reduce-only" else empty end)]')
   summary="$side $(human "$size") $MNAME $([ $otype = 1 ] && echo "at market, no worse than $(usd "$price")" || echo "at $(usd "$price")")"
@@ -515,15 +559,15 @@ plan_close() {
   local otype=1 flags=$(( FLAG_REDUCE_ONLY | FLAG_IOC ))
   if [ -n "$PRICE" ]; then
     otype=0; flags=$FLAG_REDUCE_ONLY
-    local p_in; p_in=$(num_wei "$PRICE" "Price"); price=$(round_price "$p_in" "$side")
+    local p_in; num_wei p_in "$PRICE" "Price"; price=$(round_price "$p_in" "$side")
     [ "$price" != "$p_in" ] && note "price $PRICE → $(human "$price") (rounded to the market's step, never worse than asked)"
   else
     band="${BAND:-$(setting market_band_pct)}"; check_band "$band"
-    ref=$(ref_price); price=$(band_price "$ref" "$side" "$band")
+    ref_price ref; price=$(band_price "$ref" "$side" "$band")
     note "worst price $(usd "$price"): the current price $(usd "$ref") $([ "$side" = buy ] && echo plus || echo minus) $band%"
   fi
   val=$(bc_int "$size * $price / 10^18"); fee=$(bc_int "$val * $TAKER_FEE / 10^18")
-  local rest; rest=$(rest_us "$RESTS" "$(setting default_ttl)")
+  local rest; rest_us rest "$RESTS" "$(setting default_ttl)"
   local signed; [ "$side" = buy ] && signed="$size" || signed="-$size"
   local what; what="$([ "$size" = "$abs" ] && echo "the whole position" || echo "$pct% of the position")"
   summary="close $what in $MNAME: $side $(human "$size") $([ $otype = 1 ] && echo "at market, no worse than $(usd "$price")" || echo "at $(usd "$price")")"
@@ -593,11 +637,11 @@ plan_edit() {
   old_price=$(to_dec "$(echo "$ORDER" | jq -r .price)"); old_size=$(to_dec "$(echo "$ORDER" | jq -r .initial_size)"); old_size=${old_size#-}
   price=$old_price; size=$old_size
   if [ -n "$PRICE" ]; then
-    local p_in; p_in=$(num_wei "$PRICE" "Price"); price=$(round_price "$p_in" "$side")
+    local p_in; num_wei p_in "$PRICE" "Price"; price=$(round_price "$p_in" "$side")
     [ "$price" != "$p_in" ] && note "price $PRICE → $(human "$price") (rounded $([ "$side" = buy ] && echo down || echo up) to the market's step)"
   fi
   if [ -n "$SIZE_OPT" ]; then
-    local s_in; s_in=$(num_wei "$SIZE_OPT" "Size"); size=$(floor_to "$s_in" "$LOT")
+    local s_in; num_wei s_in "$SIZE_OPT" "Size"; size=$(floor_to "$s_in" "$LOT")
     [ "$size" != "$s_in" ] && note "size $SIZE_OPT → $(human "$size") (rounded down to the market's step)"
     [ "$(bc_int "$size > 0")" = 1 ] || fail trade "Size $SIZE_OPT is smaller than the market's smallest step."
   fi
@@ -623,8 +667,8 @@ plan_trigger() {   # stop-loss | take-profit
   pos=$(to_dec "$pos"); abs=${pos#-}
   case "$pos" in -*) side=buy ;; *) side=sell ;; esac   # the closing side
   [ "$which" = stop-loss ] && ttype=$STOP_LOSS || ttype=$TAKE_PROFIT
-  ref=$(ref_price)
-  trig=$(num_wei "$TRIG_PRICE" "Trigger price")
+  ref_price ref
+  num_wei trig "$TRIG_PRICE" "Trigger price"
   local rtrig; rtrig=$(round_price "$trig" "$side"); [ "$rtrig" != "$trig" ] && note "trigger price $TRIG_PRICE → $(human "$rtrig") (rounded to the market's step)"; trig=$rtrig
   # A stop-loss must sit on the losing side of the current price, a take-profit on the winning side.
   local long; [ "$side" = sell ] && long=true || long=false
@@ -634,7 +678,7 @@ plan_trigger() {   # stop-loss | take-profit
     [ "$(bc_int "$trig > $ref")" = 1 ] || fail trade "For this $([ "$long" = true ] && echo long || echo short) position the $which must be above the current price $(usd "$ref"), or it would fire at once."
   fi
   if [ -n "$LIMIT_PRICE" ]; then
-    local l_in; l_in=$(num_wei "$LIMIT_PRICE" "Limit price"); limit=$(round_price "$l_in" "$side")
+    local l_in; num_wei l_in "$LIMIT_PRICE" "Limit price"; limit=$(round_price "$l_in" "$side")
     [ "$limit" != "$l_in" ] && note "limit price $LIMIT_PRICE → $(human "$limit") (rounded to the market's step)"
   else
     band="${BAND:-$(setting market_band_pct)}"; check_band "$band"
@@ -642,13 +686,13 @@ plan_trigger() {   # stop-loss | take-profit
     note "when it fires it trades at market, no worse than $(usd "$limit") (the trigger price $([ "$side" = buy ] && echo plus || echo minus) $band%)"
   fi
   if [ -n "$SIZE_OPT" ]; then
-    local s_in; s_in=$(num_wei "$SIZE_OPT" "Size"); size=$(floor_to "$s_in" "$LOT")
+    local s_in; num_wei s_in "$SIZE_OPT" "Size"; size=$(floor_to "$s_in" "$LOT")
     [ "$(bc_int "$size > 0 && $size <= $abs")" = 1 ] || fail trade "Size must be above 0 and at most the position ($(human "$abs"))."
     [ "$side" = buy ] && signed="$size" || signed="-$size"
   else
     size=0; signed=0   # with grouping "asset", pod sizes it from the whole position when it fires
   fi
-  rest=$(rest_us "$RESTS" "$TRIGGER_TTL_DEFAULT")
+  rest_us rest "$RESTS" "$TRIGGER_TTL_DEFAULT"
   local trig_hex; trig_hex="0x$(echo "obase=16; $trig" | bc | tr -d '\\\n' | tr 'A-F' 'a-f')"
   jq -n --arg which "$which" --arg side "$side" --arg book "$BOOK" --arg mname "$MNAME" --arg signed "$signed" --arg limit "$limit" --arg trig "$trig" \
     --arg th "$trig_hex" --argjson ttype "$ttype" --argjson g "$GROUP_ASSET" --argjson ioc "$ioc" --argjson rest "$rest" \
@@ -674,10 +718,10 @@ plan_edit_trigger() {
   size=$(echo "$TRIG" | jq -r .size); limit=$(to_dec "$(echo "$TRIG" | jq -r .limit_price)"); trig=$(to_dec "$(echo "$TRIG" | jq -r .trigger_price)")
   account_numbers
   local pos; pos=$(to_dec "$(position_of "$BOOK")"); case "$pos" in -*) side=buy ;; *) side=sell ;; esac
-  [ -n "$TRIG_PRICE" ] && trig=$(round_price "$(num_wei "$TRIG_PRICE" "Trigger price")" "$side")
-  [ -n "$LIMIT_PRICE" ] && limit=$(round_price "$(num_wei "$LIMIT_PRICE" "Limit price")" "$side")
+  if [ -n "$TRIG_PRICE" ]; then num_wei trig "$TRIG_PRICE" "Trigger price"; trig=$(round_price "$trig" "$side"); fi
+  if [ -n "$LIMIT_PRICE" ]; then num_wei limit "$LIMIT_PRICE" "Limit price"; limit=$(round_price "$limit" "$side"); fi
   if [ -n "$SIZE_OPT" ]; then
-    local s; s=$(floor_to "$(num_wei "$SIZE_OPT" "Size")" "$LOT"); [ "$side" = buy ] && size="$s" || size="-$s"
+    local s; num_wei s "$SIZE_OPT" "Size"; s=$(floor_to "$s" "$LOT"); [ "$side" = buy ] && size="$s" || size="-$s"
   fi
   local trig_hex; trig_hex="0x$(echo "obase=16; $trig" | bc | tr -d '\\\n' | tr 'A-F' 'a-f')"
   echo "$TRIG" | pj --arg mname "$MNAME" --arg side "$side" --arg size "$size" --arg limit "$limit" --arg trig "$trig" --arg th "$trig_hex" 'include "pod";
@@ -702,6 +746,7 @@ plan_cancel_trigger() {
   save_plan "$(cat "$T/plan")"
 }
 
+[ -z "$USD" ] || case "$ACTION" in buy|sell) ;; *) fail trade "--usd is for buy and sell." "Use --percent to close part of a position." ;; esac
 case "$ACTION" in
   buy|sell)              plan_order "$ACTION" ;;
   close)                 plan_close ;;

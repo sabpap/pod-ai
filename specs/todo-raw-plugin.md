@@ -32,6 +32,7 @@ Run the same requests with each plugin, in fresh sessions, and compare:
 | "What's NVDA's price?" | Choosing between last price, mark price and oracle price, and converting them |
 | "Buy 0.01 NVDA at $140, then cancel it" | Building the order: tick and lot rounding, the deadline on the 500 ms grid, the nonce, the absolute `ttl`, the order id; and checking the real outcome |
 | "Is everything working?" | The plugin's status levels against whatever the agent assembles itself |
+| "Buy a little of each of these seven markets" | Sizing. A real run on 2026-11-26 bought 0.01 units of each, and gold (about $3,570 a unit against $150 for NVDA) became 60% of the exposure. The plugin has `--usd` and a skill that says sizes are in units; the raw version deliberately has neither, so the demo shows whether the agent notices |
 
 What to record for each run:
 

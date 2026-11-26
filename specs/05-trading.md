@@ -15,6 +15,7 @@ Trading places, changes and cancels orders and stop-loss / take-profit triggers 
 | TR5 | Preview | **Cost and margin**: market, side, size, price after rounding, worst price (market orders), order value, fee, margin needed, free margin after |
 | TR6 | How long a limit order rests | **1 day** by default; any order can name its own time (`10m`, `1h`, `7d`). A profile setting, `default_ttl` |
 | TR7 | Shortcuts | **Close a position** (all or part, one reduce-only order) and **cancel all orders** (all, or one market's, in one batch). No bracket orders and no free-form batches for now |
+| TR8 | Sizing by money | Added 2026-11-26 after a tester bought "0.01 of each" of seven markets and gold (about $3,570 a unit) became 60% of the exposure. **`--usd AMOUNT` instead of a size** on buy and sell: a limit order is sized at its price, a market order at the current price, rounded down to the size step, with a note. Market-order previews also show the value at the current price beside the worst case. The skill says a size is in units, not dollars |
 | T5 (status) | Check before each send | None: pod's own error is the signal, and every send's result is recorded for status |
 
 ## Actions
@@ -111,6 +112,16 @@ Built in [plugins/pod](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/plu
 End-to-end run on staging with the dev wallet, each action planned, sent and followed: a resting buy (rounded 75.034 → 75.03), edited (price and size) and cancelled; two orders cancelled in one batch; a stop-loss armed, moved and removed; a take-profit with a limit price armed and removed; a maker-only order that would cross, refused by pod; a market buy filled within its 2% cap; the whole position closed at market. The account ended with no positions and no orders.
 
 Tests: 63 offline unit checks (conversions, rounding, the band), 58 read-only smoke checks (including 19 trading plans and refusals, none sent).
+
+## Changes (2026-11-26, version 0.4.2)
+
+| Change | Why |
+|---|---|
+| `--usd AMOUNT` on buy and sell (TR8) | Equal unit sizes put very different amounts of money into different markets |
+| `value_at_current_price_usd` in market-order previews | `order_value_usd` is at the worst price, which overstates a "$10" order |
+| A bad number or resting time (`abc`, `5y`) is now reported | They were read inside `$(...)`, so the failure message was swallowed and the script printed nothing |
+| A missing current price is now reported, and no longer blocks a market order that names its own worst price | The current-price lookup also ran inside `$(...)`. Found by review: with pod's stats route down, `buy NVDA 0.1 --market --max-price 160` printed nothing. The preview's value at the current price is now left out when the price is unavailable, rather than failing the plan |
+| Following an order survives a passing REST error | The two lookups the follow loop makes stopped the whole script on one failed request; they now count as "not known yet" and the loop asks again |
 
 ## Not part of Trading
 

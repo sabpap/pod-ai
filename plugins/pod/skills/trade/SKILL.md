@@ -21,6 +21,7 @@ Turn the request into one action. Nothing is sent at this step.
 | The user says | Run |
 |---|---|
 | "Buy 0.5 NVDA at 150" | `trade.sh buy NVDA 0.5 --price 150` |
+| "Buy $10 of NVDA" / "$10 of each" | `trade.sh buy NVDA --usd 10 --market` (the size is worked out from the price) |
 | "Sell 0.5 NVDA at market" | `trade.sh sell NVDA 0.5 --market` |
 | "Buy at market, but no more than 152" | `trade.sh buy NVDA 0.5 --market --max-price 152` |
 | "Short 2 AAPL at 230" | `trade.sh sell AAPL 2 --price 230` (selling a perp you do not hold opens a short) |
@@ -33,6 +34,8 @@ Turn the request into one action. Nothing is sent at this step.
 
 Options: `--maker-only` (only rest in the book, never take), `--ioc` (fill what you can now, cancel the rest), `--reduce-only` (perps: only shrink a position), `--rests 1h` (how long a limit order stays, default 1 day), `--band 1.5` (a market order's worst price as a % from the current price, default 2%), `--limit-price` for a trigger (else it trades at market within the band), `--size` for a trigger (else the whole position).
 
+**A size is in units of the asset, not dollars.** Prices differ a lot between markets (gold about $3,500, NVDA about $150), so the same size in two markets can be very different amounts of money. When the user names an amount of money, or asks for "a little" or "the same" of several markets, use `--usd AMOUNT` instead of a size: a limit order is sized at its price, a market order at the current price, rounded down to the market's size step. The plan's note shows the size it came to.
+
 Order ids and trigger ids come from `/pod:account orders` and `/pod:account triggers`. Markets can be named loosely: `NVDA`, `nvidia`, `NVDA perp`, `NVDA spot`.
 
 The plan answer has `plan_id`, `summary`, `preview`, `notes` and `needs_approval`. **Notes** say what was changed: prices and sizes are rounded to the market's steps on the side that never trades worse than asked (a buy price down, a sell price up, a size down), and a market order's worst price is shown. Plans expire after 2 minutes.
@@ -41,7 +44,7 @@ The plan answer has `plan_id`, `summary`, `preview`, `notes` and `needs_approval
 
 When `needs_approval` is true (the `approval` setting is `ask`, the default), ask with the AskUserQuestion tool: one question, two options.
 
-- **question:** the `summary` and the preview in one or two plain sentences, e.g. "Approve: buy 0.5 NVDA perp at $150 (rests 1 day)? Value $75, fee up to $0.03, margin $3.75, free margin after $96.2." Add each note.
+- **question:** the `summary` and the preview in one or two plain sentences, e.g. "Approve: buy 0.5 NVDA perp at $150 (rests 1 day)? Value $75, fee up to $0.03, margin $3.75, free margin after $96.2." For a market order, give the value at the current price (`value_at_current_price_usd`) and say the worst case is `order_value_usd`. Add each note.
 - **header:** "Approval"
 - **options:** "Approve" (description: "Send it now"), "Deny" (description: "Send nothing").
 

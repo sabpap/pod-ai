@@ -98,6 +98,12 @@ check "trade: close, no position"  '.ok == false and (.error | test("No open pos
 check "trade: stop, no position"   '.ok == false' "$S/trade.sh" stop-loss nvda --trigger-price 100
 check "trade: cancel-all, nothing" '.ok and .nothing_to_do' "$S/trade.sh" cancel-all
 check "trade: cancel unknown"      '.ok == false' "$S/trade.sh" cancel 0x0000000000000000000000000000000000000000000000000000000000000001
+check "trade: size from dollars"   '.ok and .preview.size == "0.1" and any(.notes[]; test("= [$]10 at"))' "$S/trade.sh" buy nvda --usd 10 --price 100
+check "trade: dollars or size"     '.ok == false' "$S/trade.sh" buy nvda 1 --usd 10 --price 100
+check "trade: bad number reported" '.ok == false and (.error | test("not a plain"))' "$S/trade.sh" buy nvda abc --price 100
+check "trade: bad time reported"   '.ok == false and (.error | test("not a time"))' "$S/trade.sh" buy nvda 0.01 --price 100 --rests 5y
+check "trade: market value now"    '.preview.value_at_current_price_usd | type == "string"' "$S/trade.sh" buy nvda 0.001 --market
+
 
 check "disconnect"                '.disconnected'                         "$S/profile.sh" delete
 check "trade: no wallet"          '.ok == false and (.fix | test("setup"))' "$S/trade.sh" buy nvda 1 --price 1
