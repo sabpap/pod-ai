@@ -44,8 +44,36 @@ check "status: accepted send clears"   '.level == "connected, read-only" and .pr
 ( source "$S/lib.sh"; record_send false false "" "nonce too low" )
 check "status: passing refusal ignored" '.level == "connected, read-only"' "$S/status.sh" --quick
 
+# Account, read on a public address (the dev wallet's), so nothing depends on the throwaway key
+DEV=0x035A9E2f3ED8bAAD656E66BF3f0071da40DcDa70
+skipped=0
+check_hist() {   # like check, but skipped while pod says its history service (indexer) is down
+  local name="$1" expr="$2"; shift 2
+  local out; out=$("$@" 2>/dev/null)
+  if echo "$out" | jq -e '.ok == false and (.error | test("indexer unavailable"))' >/dev/null 2>&1; then
+    skipped=$((skipped+1)); echo "skip $name (pod's history service is down)"
+  elif echo "$out" | jq -e "$expr" >/dev/null 2>&1; then pass=$((pass+1)); echo "ok   $name"
+  else failed=$((failed+1)); echo "FAIL $name: $(echo "$out" | head -c 400)"; fi
+}
+check "account: overview"          '.ok and .view == "overview" and (.data.account_value_usd | type == "string") and (.computed | index("free_margin_usd"))' "$S/account.sh" "$DEV"
+check "account: other address"     '.connected == false and .account == "'"$DEV"'"' "$S/account.sh" positions "$DEV"
+check "account: positions list"    '.ok and (.data | type == "array") and (.count == (.data | length))' "$S/account.sh" positions "$DEV"
+check "account: all orders, limit" '.ok and .count <= 2' "$S/account.sh" orders "$DEV" --status all --limit 2
+check "account: triggers"          '.ok and (.data | type == "array")' "$S/account.sh" triggers "$DEV"
+check "account: forced closes"     '.ok and (.data | type == "array")' "$S/account.sh" forced-closes "$DEV"
+check "account: raw"               '.ok and (.raw | type == "array") and (.data == null)' "$S/account.sh" positions "$DEV" --raw
+check_hist "account: trades"       '.ok and (.data | type == "array")' "$S/account.sh" trades "$DEV" --since 30d
+check_hist "account: activity"     '.ok and (.data | all(.description | type == "string"))' "$S/account.sh" activity "$DEV" --limit 5
+check_hist "account: results"      '.ok and (.data.lifetime | type == "object") and (.since | type == "string")' "$S/account.sh" results "$DEV"
+check "account: unknown view"      '.ok == false' "$S/account.sh" balance "$DEV"
+check "account: bad limit"         '.ok == false' "$S/account.sh" trades "$DEV" --limit 9000
+check "account: bad address"       '.ok == false' "$S/account.sh" overview 0x1234
+check "account: bad since"         '.ok == false' "$S/account.sh" trades "$DEV" --since yesterday
+check "account: bad order status"  '.ok == false' "$S/account.sh" orders "$DEV" --status done
+
 check "disconnect"                '.disconnected'                         "$S/profile.sh" delete
 check "status: not set up"        '.level == "not set up" and .wallet == null' "$S/status.sh" --quick
+check "account: no wallet, no address" '.ok == false and (.fix | test("setup"))' "$S/account.sh"
 check "send refused when not set up" '.ok == false'                       "$S/wallet.sh" send 0x0 "f()"
 
 # No password file may be left behind. Needs a keystore with a Keychain password; skipped otherwise.
@@ -62,5 +90,5 @@ else
   echo "skip no password file left (no keystore with a Keychain password)"
 fi
 
-echo "$pass passed, $failed failed"
+echo "$pass passed, $failed failed${skipped:+, $skipped skipped}"
 [ "$failed" -eq 0 ]

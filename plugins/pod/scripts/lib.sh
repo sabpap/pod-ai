@@ -104,6 +104,30 @@ money() {
 # bc_int EXPR: evaluate an integer expression with bc.
 bc_int() { echo "scale=0; $1" | bc | tr -d '\\\n'; }
 
+# since_us WHEN: a time as microseconds since 1970. WHEN is 30m, 24h, 7d, 2026-11-01 or
+# 2026-11-01T12:00:00Z (UTC). Prints nothing and returns 1 when WHEN is not understood.
+since_us() {
+  local w="$1" n="" unit=0 s
+  case "$w" in
+    *m) n=${w%m}; unit=60 ;;
+    *h) n=${w%h}; unit=3600 ;;
+    *d) n=${w%d}; unit=86400 ;;
+  esac
+  if [ "$unit" != 0 ]; then
+    case "$n" in ''|*[!0-9]*) return 1 ;; esac
+    s=$(( $(date +%s) - n * unit ))
+  else
+    case "$w" in
+      [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9])
+        s=$(date -j -u -f '%Y-%m-%d %H:%M:%S' "$w 00:00:00" +%s 2>/dev/null) || return 1 ;;
+      [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]Z)
+        s=$(date -j -u -f '%Y-%m-%dT%H:%M:%SZ' "$w" +%s 2>/dev/null) || return 1 ;;
+      *) return 1 ;;
+    esac
+  fi
+  echo $(( s * 1000000 ))
+}
+
 # --- profile ------------------------------------------------------------------------------------------
 
 profile_exists() { [ -f "$PROFILE" ]; }
