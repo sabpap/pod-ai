@@ -49,6 +49,6 @@ It answers with all settings after the change; report the new `in_words` line.
 - Switching back to `ask` needs no question.
 - Change only what the user asked for.
 
-Outside this skill, the agent may show the settings and make the other changes when the user asks in words (see the main `pod` skill), but it never switches `approval` to `auto`.
+Outside this skill, the agent may show the settings and make the other changes when the user asks in words (see the main skill, `/pod:use`), but it never switches `approval` to `auto`.
 
 With no wallet connected, the settings cannot be changed: point to `/pod:setup`.

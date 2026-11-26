@@ -56,7 +56,7 @@ Pod clears each market **once per round at one price for everyone** (checked: ev
 
 ## Implementation notes (2026-11-26)
 
-Built in [plugins/pod](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/plugins/pod/): `scripts/markets.sh`, `fetch_to` moved into `lib.sh` (shared with `account.sh`), `us_time_ms` in `pod.jq`, and the `/pod:markets` skill (since 0.6.0, `references/markets.md` of the main `pod` skill). Version 0.5.0.
+Built in [plugins/pod](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/plugins/pod/): `scripts/markets.sh`, `fetch_to` moved into `lib.sh` (shared with `account.sh`), `us_time_ms` in `pod.jq`, and the `/pod:markets` skill (since 0.6.0, `references/markets.md` of the main skill, `/pod:use`). Version 0.5.0.
 
 An independent review found the never-cleared market failing the whole market view and a zero mark shown as the headline price; both fixed before the first commit.
 

@@ -173,11 +173,11 @@ One reference that every skill points to: network addresses, identifiers, 10^18 
 
 ## Skills, as the user sees them
 
-Four skills (revised 2026-11-26, version 0.6.0). A skill is split off only when the user will type its name; everything the user says in words goes through one main skill, `pod`, which reads a reference file for each kind of request. The earlier seven-skill version is at git tag `hybrid-original`.
+Four skills (revised 2026-11-26, version 0.6.0; the main skill was named `pod` until 0.6.1). A skill is split off only when the user will type its name; everything the user says in words goes through one main skill, `/pod:use`, which reads a reference file for each kind of request. The earlier seven-skill version is at git tag `hybrid-original`.
 
 | Skill | Section | Typical requests |
 |---|---|---|
-| `pod` (main skill, started by the agent) | 3 to 6 | "What do I have?", "show 0xABC…'s positions", "top movers", "NVDA order book", "buy 0.5 NVDA at 180", "cancel all my orders", "watch my positions" |
+| `/pod:use` (main skill, started by the agent or the user) | 3 to 6 | "What do I have?", "show 0xABC…'s positions", "top movers", "NVDA order book", "buy 0.5 NVDA at 180", "cancel all my orders", "watch my positions" |
 | `/pod:setup` | 1 | "Connect my wallet", "re-test my wallet", "disconnect" |
 | `/pod:status` | 2 | "Am I connected?", "can you trade?" |
 | `/pod:settings` (started only by the user) | 4 | `/pod:settings approval auto`, `/pod:settings market_band_pct 1` |

@@ -101,7 +101,7 @@ Shown by `/pod:status` and at the end of setup, and changed with `/pod:settings`
 
 ## Implementation notes (2026-11-26)
 
-Built in [plugins/pod](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/plugins/pod/): `scripts/trade.sh`, the `/pod:trade` skill (since 0.6.0, `references/trade.md` of the main `pod` skill), the settings in `profile.sh` (`settings`, `set`) and `/pod:setup`, `to_wei`, `duration_s` and `setting` in `lib.sh`, and `find_market` in `pod.jq`. Version 0.4.0.
+Built in [plugins/pod](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/plugins/pod/): `scripts/trade.sh`, the `/pod:trade` skill (since 0.6.0, `references/trade.md` of the main skill, `/pod:use`), the settings in `profile.sh` (`settings`, `set`) and `/pod:setup`, `to_wei`, `duration_s` and `setting` in `lib.sh`, and `find_market` in `pod.jq`. Version 0.4.0.
 
 - Plans live in `~/.config/pod-plugin/plans/`, readable only by the user, and are deleted after an hour.
 - The nonce and the deadline are fixed at send time, not at plan time, so an approval that takes a minute still sends a valid order; the order id is therefore known once sent.

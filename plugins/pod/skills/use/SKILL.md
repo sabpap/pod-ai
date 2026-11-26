@@ -1,12 +1,12 @@
 ---
-name: pod
+name: use
 description: Use for any request to read or trade on pod network (staging), for the connected wallet or any address. Accounts - balance, account value, holdings, positions, profit or loss, margin, liquidation price, orders, trades, fees, stop-loss and take-profit triggers, activity, forced closes, results over a period. Markets - what can be traded, prices, how a market is doing, top movers, volume, funding, open interest, order book, spread, cost of a size now, price bars, history. Trading - place, buy, sell, go long, short, at a limit or at market, edit or cancel an order, cancel everything, close all or part of a position, protect it with a stop-loss or take-profit. Live - watch, monitor, follow, stream or keep an eye on a market, the book, an account's orders or positions; tell the user when something happens (a price crosses a level, an order fills, a position closes) or act when it does; list or stop watches. Settings - show them; load this before agreeing to "stop asking me" or "trade without asking".
 argument-hint: "[what you want on pod, in words]"
 ---
 
 # pod network
 
-This skill covers everything on pod network that the user asks for in words: accounts, markets, trading and live updates. Three things have their own skills, which the user can type: `/pod:setup` (connect a wallet), `/pod:status` (can the agent act right now) and `/pod:settings` (change how the agent trades).
+This skill, `/pod:use`, covers everything on pod network that the user asks for in words: accounts, markets, trading and live updates. Three things have their own skills, which the user can type: `/pod:setup` (connect a wallet), `/pod:status` (can the agent act right now) and `/pod:settings` (change how the agent trades).
 
 All scripts are in `${CLAUDE_PLUGIN_ROOT}/scripts/`; always run them by that full path. Each prints one JSON object (`live.sh` prints one per line). `"ok": false` always comes with `error` and usually `fix`: tell the user both in plain words, and stop.
 

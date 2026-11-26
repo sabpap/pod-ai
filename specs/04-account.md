@@ -13,7 +13,7 @@ Account answers **"what does this account hold, what is it worth, and what has i
 | A3 | Names for other accounts | **No.** Other accounts are named by their address |
 | A4 | History | **Newest 50 entries** by default; `--since` for a time window and `--limit` for more, up to 5,000; paging handled by the script |
 | A5 | Results over a period | **Yes**, a `results` view: plain totals over a window, marked as computed. No ratings, win rates or advice |
-| A6 | Skills | **One skill**, `/pod:account`, with one view per question. Since 0.6.0 it is `references/account.md` of the main `pod` skill |
+| A6 | Skills | **One skill**, `/pod:account`, with one view per question. Since 0.6.0 it is `references/account.md` of the main skill, `/pod:use` |
 
 A raw comparison version (one skill, no scripts) is noted in [todo-raw-plugin.md](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/specs/todo-raw-plugin.md).
 
@@ -95,7 +95,7 @@ One JSON object:
 
 ## Implementation notes (2026-11-26)
 
-Built in [plugins/pod](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/plugins/pod/): `scripts/account.sh`, `scripts/pod.jq` (exact conversion of pod's numbers on digit strings, no floating point), `since_us` in `lib.sh`, and the `/pod:account` skill (since 0.6.0, `references/account.md` of the main `pod` skill). Version 0.3.0.
+Built in [plugins/pod](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/plugins/pod/): `scripts/account.sh`, `scripts/pod.jq` (exact conversion of pod's numbers on digit strings, no floating point), `since_us` in `lib.sh`, and the `/pod:account` skill (since 0.6.0, `references/account.md` of the main skill, `/pod:use`). Version 0.3.0.
 
 | Finding | Effect |
 |---|---|
