@@ -31,7 +31,10 @@ secrets/
 credentials*.json
 *-credentials.json
 
-# The pod plugin's own state: the profile and the temp files that carry a keystore password
+# Temp folders that can carry a keystore password (pod-send.sh and its tests delete them on exit),
+# and the pod plugin's state from the 3-plugin branch, should it ever land here
+pod-send.*
+pod-send-test.*
 profile.json
 pod-plugin/
 pod-plugin.*
