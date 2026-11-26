@@ -165,7 +165,7 @@ find_open_order() {   # find_open_order ORDER_ID: the open (pending or active) o
       cursor=$(jq -r '.next_cursor // empty' "$T/o"); [ -z "$cursor" ] && break
     done
   done
-  fail trade "No open order $1 on this account." "List open orders with /pod:account orders."
+  fail trade "No open order $1 on this account." "List open orders with account.sh orders."
 }
 
 find_trigger() {   # find_trigger TRIGGER_ID: the armed trigger as JSON, or fail
@@ -177,7 +177,7 @@ find_trigger() {   # find_trigger TRIGGER_ID: the armed trigger as JSON, or fail
     [ -n "$TRIG" ] && return 0
     cursor=$(jq -r '.next_cursor // empty' "$T/t"); [ -z "$cursor" ] && break
   done
-  fail trade "No armed trigger $1 on this account." "List triggers with /pod:account triggers."
+  fail trade "No armed trigger $1 on this account." "List triggers with account.sh triggers."
 }
 
 # --- plans ------------------------------------------------------------------------------------------------
@@ -289,7 +289,7 @@ do_send() {   # do_send PLAN_ID
     ok=$(wait_accepted "$tx") || ok=unknown
     if [ "$ok" = false ]; then
       jq --arg tx "$tx" '.state = "refused" | .sent = {txs: [$tx]}' "$PF" > "$PF.new" && mv "$PF.new" "$PF"
-      fail trade "Pod accepted transaction $tx but marked it failed." "Check the account with /pod:account activity."
+      fail trade "Pod accepted transaction $tx but marked it failed." "Check the account with account.sh activity."
     fi
     txs=$(echo "$txs" | jq --arg tx "$tx" '. + [$tx]')
     n=$(( n + 1 ))
@@ -403,7 +403,7 @@ do_follow() {   # do_follow PLAN_ID TIMEOUT_S
     if [ "$(now_us)" -gt "$until_us" ]; then
       [ -z "$msg" ] && msg="No outcome yet: pod has not settled it within $2 seconds after its round."
       jq -n --arg id "$1" --arg m "$msg" '{ok: true, plan_id: $id, final: false, outcome: $m,
-        next: "Check again with trade.sh follow \($id), or look at /pod:account orders."}'
+        next: "Check again with trade.sh follow \($id), or look at account.sh orders."}'
       return 0
     fi
     sleep 1

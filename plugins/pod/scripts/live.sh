@@ -118,7 +118,7 @@ case "$depth" in ''|*[!0-9]*) fail live "--depth must be a whole number from 1 t
 { [ "$depth" -ge 1 ] && [ "$depth" -le 50 ]; } || fail live "--depth must be a whole number from 1 to 50."
 [ "$depth" = 1 ] || [ "$channel" = book ] || fail live "--depth is for the book channel."
 [ -z "$order" ] || case "$channel" in orders|activity) ;; *) fail live "--order is for the orders and activity channels." ;; esac
-[ -z "$order" ] || echo "$order" | grep -Eq '^0x[0-9a-fA-F]{64}$' || fail live "--order needs an order id (0x and 64 hex characters)." "/pod:account orders lists them."
+[ -z "$order" ] || echo "$order" | grep -Eq '^0x[0-9a-fA-F]{64}$' || fail live "--order needs an order id (0x and 64 hex characters)." "account.sh orders lists them."
 [ "$txs" = '[]' ] || [ "$channel" = receipts ] || fail live "--tx is for the receipts channel."
 [ -z "$mfilter" ] || case "$channel" in orders|positions|triggers|activity) ;; *) fail live "--market is for the orders, positions, triggers and activity channels; name markets directly for $channel." ;; esac
 
@@ -137,7 +137,7 @@ fetch_to live /clob/status "$T/status"
 resolve() {   # resolve QUERY: the market's id, or fail
   local m
   m=$(jq -r --arg q "$1" --argjson s "$spot" -L "$HERE" 'include "pod"; find_market($q; $s) | .id // empty' "$T/markets")
-  [ -n "$m" ] || fail live "No market called '$1'." "Name it by its ticker (e.g. NVDA), add 'spot' for the spot market, or search with /pod:markets."
+  [ -n "$m" ] || fail live "No market called '$1'." "Name it by its ticker (e.g. NVDA), add 'spot' for the spot market, or search with markets.sh list."
   echo "$m"
 }
 
