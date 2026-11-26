@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Setup step 3: which Foundry keystores exist, and does each have its password in the Keychain?
-# Usage: list-wallets.sh
+# Run as: pod setup wallets
 # Never reads a password: the Keychain lookup checks that an entry exists without asking for its
 # secret. Foundry keystores usually do not store the address in clear, so "address" is often null;
-# wallet.sh address works it out once a keystore is chosen.
+# pod setup works it out once a keystore is chosen.
 
 source "$(dirname "$0")/lib.sh"
 

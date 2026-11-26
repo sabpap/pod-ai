@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Setup step 2: does pod staging answer, is it the right chain, and is it open for writes?
-# Usage: check-network.sh
+# Run as: pod setup network
 
 source "$(dirname "$0")/lib.sh"
 

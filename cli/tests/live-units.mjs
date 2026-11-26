@@ -1,7 +1,7 @@
-// Offline tests of the live listener's decoding and conditions (scripts/live-lib.mjs). No network.
-// Usage: node plugins/pod/tests/live-units.mjs
+// Offline tests of the live listener's decoding and conditions (libexec/live-lib.mjs). No network.
+// Usage: node cli/tests/live-units.mjs
 
-import * as L from '../scripts/live-lib.mjs';
+import * as L from '../libexec/live-lib.mjs';
 
 let pass = 0, failed = 0;
 function eq(name, got, want) {

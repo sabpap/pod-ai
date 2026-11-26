@@ -3,23 +3,122 @@
 # pod staging. Every action is planned first (rounding, preview, plan id), then sent by its plan id,
 # then followed to its outcome. Spec: specs/05-trading.md.
 #
-# Plan an action (nothing is sent):
-#   trade.sh buy|sell MARKET SIZE --price P [--maker-only] [--ioc] [--reduce-only] [--rests 1h] [--spot]
-#   trade.sh buy|sell MARKET SIZE --market [--max-price P | --min-price P | --band 1.5] [--reduce-only] [--spot]
-#     SIZE is in units of the asset (0.5 NVDA). For an amount of money, give --usd 10 instead of SIZE:
-#     the size is worked out from the limit price, or from the current price for a market order.
-#   trade.sh close MARKET [--percent 50] [--price P | --band 1.5]
-#   trade.sh edit ORDER_ID [--price P] [--size S]
-#   trade.sh cancel ORDER_ID
-#   trade.sh cancel-all [MARKET]
-#   trade.sh stop-loss|take-profit MARKET --trigger-price P [--limit-price P | --band 1.5] [--size S] [--rests 30d]
-#   trade.sh edit-trigger TRIGGER_ID [--trigger-price P] [--limit-price P] [--size S]
-#   trade.sh cancel-trigger TRIGGER_ID
-# Any of these with --send plans and sends at once, only when the approval setting is "auto".
-#
-# Then:
-#   trade.sh send PLAN_ID      sign and send exactly that plan; returns once pod has accepted it
-#   trade.sh follow PLAN_ID [--timeout 30]   wait for the auction round and report the outcome
+#: pod trade: place, change and cancel orders and stop-loss / take-profit triggers with the
+#: connected wallet, on pod staging only.
+#:
+#: Every action goes through four steps: plan, approve, send, follow.
+#:   1. Plan     pod trade ACTION ...          nothing is sent; prints plan_id, summary and preview
+#:   2. Approve  while needs_approval is true (the approval setting is "ask", the default), show the
+#:               person the summary and the preview and ask them to approve or deny. Only an approve
+#:               sends; any other answer means deny. Never send a plan the person has not approved.
+#:   3. Send     pod trade send PLAN_ID        sends exactly that plan; returns once pod accepts it.
+#:               Tell the person at once: "Sent: ... · waiting for the next auction round". Accepted
+#:               is not traded yet: pod trades at its next auction round.
+#:   4. Follow   pod trade follow PLAN_ID      waits for the round and reports the outcome. Run it in
+#:               the background if you can, so the conversation goes on; otherwise right after sending.
+#:
+#: Plan an action (nothing is sent):
+#:   pod trade buy|sell MARKET SIZE --price P [--maker-only] [--ioc] [--reduce-only] [--rests 1h] [--spot]
+#:   pod trade buy|sell MARKET SIZE --market [--max-price P | --min-price P | --band 1.5] [--reduce-only] [--spot]
+#:   pod trade buy|sell MARKET --usd AMOUNT (--price P | --market)   size worked out from an amount of money
+#:   pod trade close MARKET [--percent 50] [--price P | --band 1.5]
+#:   pod trade edit ORDER_ID [--price P] [--size S]
+#:   pod trade cancel ORDER_ID
+#:   pod trade cancel-all [MARKET]
+#:   pod trade stop-loss|take-profit MARKET --trigger-price P [--limit-price P | --band 1.5] [--size S] [--rests 30d]
+#:   pod trade edit-trigger TRIGGER_ID [--trigger-price P] [--limit-price P] [--size S]
+#:   pod trade cancel-trigger TRIGGER_ID
+#: Then:
+#:   pod trade send PLAN_ID                    sign and send exactly that plan
+#:   pod trade follow PLAN_ID [--timeout 30]   wait for the auction round (seconds after it) and report
+#: Any planning action with --send plans and sends in one call, only when the approval setting is "auto".
+#:
+#: Pick the action from the request:
+#:   "buy 0.5 NVDA at 150"                     pod trade buy NVDA 0.5 --price 150
+#:   "buy $10 of NVDA", "$10 of each"           pod trade buy NVDA --usd 10 --market
+#:   "sell 0.5 NVDA at market"                 pod trade sell NVDA 0.5 --market
+#:   "buy at market, but no more than 152"     pod trade buy NVDA 0.5 --market --max-price 152
+#:   "short 2 AAPL at 230"                     pod trade sell AAPL 2 --price 230 (selling a perp you do
+#:                                             not hold opens a short)
+#:   "buy NVDAx spot"                          add --spot, or name the market "NVDA spot"
+#:   "close my NVDA position", "close half"    pod trade close NVDA / pod trade close NVDA --percent 50
+#:   "move that order to 149"                  pod trade edit ORDER_ID --price 149 (--size: the new total)
+#:   "cancel that order", "cancel everything"  pod trade cancel ORDER_ID / pod trade cancel-all [MARKET]
+#:   "stop-loss at 140", "take profit at 170"  pod trade stop-loss NVDA --trigger-price 140 /
+#:                                             pod trade take-profit NVDA --trigger-price 170
+#:   "move my stop to 145", "remove it"        pod trade edit-trigger TRIGGER_ID --trigger-price 145 /
+#:                                             pod trade cancel-trigger TRIGGER_ID
+#: Order ids come from pod account orders; trigger ids from pod account triggers (order_id there).
+#: Markets are named loosely: NVDA, nvidia, "NVDA perp", "NVDA spot", or the 0x market id.
+#:
+#: A size is in units of the asset, not dollars. Prices differ a lot between markets (gold about
+#: $3,500, NVDA about $150), so the same size in two markets can be very different amounts of money.
+#: When the person names an amount of money, or asks for "a little" or "the same" of several markets,
+#: use --usd AMOUNT instead of a size: a limit order is sized at its price, a market order at the
+#: current price, rounded down to the market's size step. The plan's notes show the size it came to.
+#:
+#: Options:
+#:   --price P          a limit order's price (with edit: the new price; with close: close at this
+#:                      price instead of at market)
+#:   --market           a market order: it trades at once, no worse than its worst price
+#:   --max-price P      a market buy's worst price;  --min-price P: a market sell's worst price
+#:   --band PCT         a market order's worst price as a percent from the current price, 0.1 to 20
+#:                      (default: the market_band_pct setting, 2). For a trigger without --limit-price:
+#:                      the band from the trigger price
+#:   --usd AMOUNT       buy and sell: an amount of money instead of SIZE
+#:   --maker-only       only rest in the book, never take (not with --ioc or --market)
+#:   --ioc              immediate-or-cancel: fill what you can now, cancel the rest
+#:   --reduce-only      perps: only shrink a position
+#:   --rests TIME       how long a limit order stays, 1m to 30d (default: the default_ttl setting, 1d);
+#:                      for a trigger, how long it stays armed (default 30d)
+#:   --spot             pick the spot market when a name has both a perp and a spot market
+#:   --percent N        close: the share of the position to close, above 0 up to 100 (default 100)
+#:   --trigger-price P  stop-loss and take-profit: the price that fires it
+#:   --limit-price P    a trigger's limit price; without it, it trades at market within the band
+#:   --size S           a trigger's size (default: the whole position); with edit, the order's new
+#:                      total size
+#:   --send             plan and send in one call (approval "auto" only)
+#:   --timeout S        follow: whole seconds to wait after the order's round (default 30)
+#:
+#: The plan's answer:
+#:   plan_id          the id to send and follow. Plans expire after 2 minutes, because prices move
+#:   summary          one line, e.g. "buy 0.5 NVDA perp at $150, rests 1 day"
+#:   preview          market, side, type, size, price or worst_price, flags, order_value_usd, fee_usd,
+#:                    margin_needed_usd and free_margin_after_usd (perps); cash_available_usd or
+#:                    tokens_available (spot); value_at_current_price_usd (market orders: the value at
+#:                    today's price; order_value_usd is the worst case)
+#:   notes            what was changed or worked out: prices and sizes are rounded to the market's steps
+#:                    on the side that never trades worse than asked (a buy price down, a sell price
+#:                    up, a size down), a market order's worst price, a size worked out from --usd,
+#:                    "not enough free margin". Give the person every note
+#:   needs_approval   true while the approval setting is "ask"
+#:   next             the command to run next
+#: How to ask: "Approve: buy 0.5 NVDA perp at $150 (rests 1 day)? Value $75, fee up to $0.03, margin
+#: $3.75, free margin after $96.2." For a market order give value_at_current_price_usd and say the
+#: worst case is order_value_usd. Add each note.
+#:
+#: Send's answer: sent, summary ("Sent: ... · waiting for the next auction round"), txs, ids (the
+#: order or trigger ids). In a terminal with approval "ask", pod trade send shows the plan and asks
+#: "Send it? [y/N]" itself; a no exits with code 3 and sends nothing.
+#:
+#: Follow's answer: final, outcome. Report the outcome in one line: "Filled: ... at an average $...,
+#: fee $...", "Partly filled ...", "Resting in the book ...", "Refused: not enough margin ...",
+#: "Armed: stop-loss ...", "Cancelled.". final: false means nothing settled within the timeout: say
+#: so, and offer to check again with pod trade follow PLAN_ID or pod account orders.
+#:
+#: Rules pod applies:
+#:   Only the connected wallet trades, only on pod staging (the chain id is checked before every send).
+#:   Pod refuses maker-only with immediate-or-cancel, maker-only on a market order, and reduce-only on
+#:   spot; pod trade refuses them first, with a plain message.
+#:   A stop-loss must sit on the losing side of the current price and a take-profit on the winning side.
+#:   cancel-all covers orders, not triggers.
+#:   Pod's refusals are passed on with pod's own reason. A refusal for a lasting reason (region block,
+#:   blacklist, frozen account) also makes pod status report a problem.
+#:   The settings approval, market_band_pct and default_ttl are shown and changed with pod settings,
+#:   only when the person asks.
+#:
+#: Not part of pod: advice, strategies, risk limits, bracket orders, free-form batches, transfers,
+#: withdrawals and bot keys.
 
 source "$(dirname "$0")/lib.sh"
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -52,7 +151,7 @@ get() {   # get PATH FILE: a REST route into FILE; fails with pod's own reason
 }
 
 need_wallet() {
-  profile_exists || fail trade "No wallet is connected." "Connect one with /pod:setup."
+  profile_exists || fail trade "No wallet is connected." "Connect one with pod setup."
   ADDR=$(profile_get '.wallet.address')
 }
 
@@ -165,7 +264,7 @@ find_open_order() {   # find_open_order ORDER_ID: the open (pending or active) o
       cursor=$(jq -r '.next_cursor // empty' "$T/o"); [ -z "$cursor" ] && break
     done
   done
-  fail trade "No open order $1 on this account." "List open orders with /pod:account orders."
+  fail trade "No open order $1 on this account." "List open orders with pod account orders."
 }
 
 find_trigger() {   # find_trigger TRIGGER_ID: the armed trigger as JSON, or fail
@@ -177,7 +276,7 @@ find_trigger() {   # find_trigger TRIGGER_ID: the armed trigger as JSON, or fail
     [ -n "$TRIG" ] && return 0
     cursor=$(jq -r '.next_cursor // empty' "$T/t"); [ -z "$cursor" ] && break
   done
-  fail trade "No armed trigger $1 on this account." "List triggers with /pod:account triggers."
+  fail trade "No armed trigger $1 on this account." "List triggers with pod account triggers."
 }
 
 # --- plans ------------------------------------------------------------------------------------------------
@@ -195,14 +294,15 @@ save_plan() {   # save_plan JSON: writes the plan and prints the answer
   chmod 600 "$PLANS/$id.json"
   PLAN_ID="$id"
   if $SEND; then
-    [ "$approval" = auto ] || fail trade "Approval is set to 'ask', so the plan $id was saved but not sent." "Show the preview, ask the user, then run: trade.sh send $id"
+    # With approval "ask", one-step sending works only for a person at a terminal, who is asked below.
+    [ "$approval" = auto ] || on_tty || fail trade "Approval is set to 'ask', so the plan $id was saved but not sent." "Show the person the preview, ask them, and only on approve run: pod trade send $id"
     do_send "$id"; return
   fi
   jq --arg ap "$approval" --arg exp_iso "$(date -u -r "$exp" +%Y-%m-%dT%H:%M:%SZ)" '
     {ok: true, plan_id, action, summary, preview, notes, approval: $ap, needs_approval: ($ap == "ask"),
      expires_at: $exp_iso,
-     next: (if $ap == "ask" then "Show the preview, ask the user to approve or deny, and only on approve run: trade.sh send \(.plan_id)"
-            else "Run: trade.sh send \(.plan_id)" end)}' "$PLANS/$id.json"
+     next: (if $ap == "ask" then "Show the person the summary and preview, ask them to approve or deny, and only on approve run: pod trade send \(.plan_id)"
+            else "Run: pod trade send \(.plan_id)" end)}' "$PLANS/$id.json"
 }
 
 load_plan() {   # load_plan ID: checks it and sets PF
@@ -212,6 +312,28 @@ load_plan() {   # load_plan ID: checks it and sets PF
 }
 
 # --- sending ------------------------------------------------------------------------------------------------
+
+on_tty() { [ -t 0 ] && [ -t 1 ]; }
+
+# confirm_on_tty PLAN_ID: a person running pod in a terminal, with approval "ask", is shown the plan
+# and asked here. Anything but yes sends nothing and exits 3. Without a terminal (an agent) nothing is
+# asked here: the agent asks, and in Claude Code the pod plugin's hook makes Claude Code ask.
+confirm_on_tty() {
+  { [ "$(setting approval)" = ask ] && on_tty; } || return 0
+  local ans=""
+  {
+    echo
+    echo "  $(jq -r .summary "$PF")"
+    jq -r '.preview | to_entries[] | "    \(.key): \(.value | if type == "array" then join(", ") else tostring end)"' "$PF"
+    jq -r '.notes[] | "    note: \(.)"' "$PF"
+    printf '  Send it? [y/N] '
+  } > /dev/tty
+  read -r ans < /dev/tty || ans=""
+  case "$ans" in y|Y|yes|Yes|YES) return 0 ;; esac
+  jq -n --arg id "$1" '{ok: false, step: "approval", plan_id: $id, error: "Not sent: the plan was not approved.",
+    fix: "Make a new plan when you want to trade, or answer y within 2 minutes: pod trade send \($id)"}'
+  exit 3
+}
 
 wait_accepted() {   # wait_accepted TX: until pod finalizes it; prints success true/false, or fails
   local i st
@@ -228,12 +350,16 @@ oid() { cast keccak "$(cast abi-encode 'f(address,uint64,uint32)' "$ADDR" "$1" "
 do_send() {   # do_send PLAN_ID
   load_plan "$1"
   need_wallet
-  [ "$(jq -r .state "$PF")" = planned ] || fail trade "Plan $1 was already sent." "Follow it with: trade.sh follow $1"
+  [ "$(jq -r .state "$PF")" = planned ] || fail trade "Plan $1 was already sent." "Follow it with: pod trade follow $1"
   [ "$(jq -r .expires "$PF")" -ge "$(date +%s)" ] || fail trade "Plan $1 has expired (plans last 2 minutes, because prices move)." "Make the plan again."
   [ "$(jq -r .account "$PF" | tr 'A-F' 'a-f')" = "$(echo "$ADDR" | tr 'A-F' 'a-f')" ] || fail trade "Plan $1 was made for another wallet." "Make the plan again."
+  confirm_on_tty "$1"
 
   local nonce t dl kind book txs="[]" ids="[]" i n out tx ok
-  nonce=$(printf '%d' "$(rpc_result eth_getTransactionCount "[\"$ADDR\",\"pending\"]" | jq -r .)")
+  # A failed lookup must stop here: inside printf's argument it would quietly become nonce 0.
+  nonce=$(rpc_result eth_getTransactionCount "[\"$ADDR\",\"pending\"]" 2>/dev/null | jq -r .) \
+    || fail trade "Pod did not answer the request for this account's next transaction number. Nothing was sent." "Try again in a moment: pod trade send $1"
+  nonce=$(printf '%d' "$nonce")
   t=$(( $(now_us) + LAG_US )); dl=$(( (t + AUCTION_US - 1) / AUCTION_US * AUCTION_US ))
   kind=$(jq -r .kind "$PF"); book=$(jq -r '.call.book // empty' "$PF")
 
@@ -289,7 +415,7 @@ do_send() {   # do_send PLAN_ID
     ok=$(wait_accepted "$tx") || ok=unknown
     if [ "$ok" = false ]; then
       jq --arg tx "$tx" '.state = "refused" | .sent = {txs: [$tx]}' "$PF" > "$PF.new" && mv "$PF.new" "$PF"
-      fail trade "Pod accepted transaction $tx but marked it failed." "Check the account with /pod:account activity."
+      fail trade "Pod accepted transaction $tx but marked it failed." "Check the account with pod account activity."
     fi
     txs=$(echo "$txs" | jq --arg tx "$tx" '. + [$tx]')
     n=$(( n + 1 ))
@@ -300,7 +426,7 @@ do_send() {   # do_send PLAN_ID
   jq '{ok: true, plan_id, action, sent: true,
        summary: ("Sent: " + .summary + " · waiting for the next auction round"),
        txs: .sent.txs, ids: .sent.ids,
-       next: "Run in the background: trade.sh follow \(.plan_id). Report its outcome when it ends."}' "$PF"
+       next: "Run in the background: pod trade follow \(.plan_id). Report its outcome when it ends."}' "$PF"
 }
 export SUBMIT_ORDER_SIG="$SUBMIT_ORDER" UPDATE_SIG="$UPDATE" SUBMIT_TRIGGER_SIG="$SUBMIT_TRIGGER" \
        UPDATE_TRIGGER_SIG="$UPDATE_TRIGGER" CANCEL_TRIGGER_SIG="$CANCEL_TRIGGER"
@@ -403,7 +529,7 @@ do_follow() {   # do_follow PLAN_ID TIMEOUT_S
     if [ "$(now_us)" -gt "$until_us" ]; then
       [ -z "$msg" ] && msg="No outcome yet: pod has not settled it within $2 seconds after its round."
       jq -n --arg id "$1" --arg m "$msg" '{ok: true, plan_id: $id, final: false, outcome: $m,
-        next: "Check again with trade.sh follow \($id), or look at /pod:account orders."}'
+        next: "Check again with pod trade follow \($id), or look at pod account orders."}'
       return 0
     fi
     sleep 1
@@ -436,7 +562,7 @@ while [ $# -gt 0 ]; do
     --limit-price) LIMIT_PRICE="${2:-}"; shift 2 ;;
     --timeout) TIMEOUT="${2:-}"; shift 2 ;;
     --send) SEND=true; shift ;;
-    -*) fail trade "Unknown option $1." "See the usage at the top of trade.sh." ;;
+    -*) fail_usage trade "Unknown option $1." "See pod trade --help." ;;
     *) POS+=("$1"); shift ;;
   esac
 done
@@ -447,11 +573,11 @@ arg() { echo "${POS[$1]:-}"; }
 plan_order() {   # buy | sell
   local side="$1" q size_in size p_in price worst flags=0 otype=0 rest val fee rate margin free summary ref="" band
   q=$(arg 0); size_in=$(arg 1)
-  [ -n "$q" ] || fail trade "Usage: trade.sh $side MARKET SIZE --price P, or --market; --usd AMOUNT instead of SIZE for an amount of money."
+  [ -n "$q" ] || fail trade "Usage: pod trade $side MARKET SIZE --price P, or --market; --usd AMOUNT instead of SIZE for an amount of money."
   if [ -n "$USD" ]; then
     [ -z "$size_in" ] || fail trade "Give either a SIZE in units or --usd for an amount of money, not both."
   else
-    [ -n "$size_in" ] || fail trade "Usage: trade.sh $side MARKET SIZE --price P, or --market; --usd AMOUNT instead of SIZE for an amount of money."
+    [ -n "$size_in" ] || fail trade "Usage: pod trade $side MARKET SIZE --price P, or --market; --usd AMOUNT instead of SIZE for an amount of money."
   fi
   need_wallet; load_market "$q" "$SPOT"
 
@@ -545,9 +671,9 @@ plan_order() {   # buy | sell
 
 plan_close() {
   local q pct=100 pos abs size side price ref band val fee
-  q=$(arg 0); [ -n "$q" ] || fail trade "Usage: trade.sh close MARKET [--percent 50] [--price P]."
+  q=$(arg 0); [ -n "$q" ] || fail trade "Usage: pod trade close MARKET [--percent 50] [--price P]."
   need_wallet; load_market "$q" false
-  [ "$MTYPE" = perp ] || fail trade "close is for perp positions. To sell spot tokens, use trade.sh sell."
+  [ "$MTYPE" = perp ] || fail trade "close is for perp positions. To sell spot tokens, use pod trade sell."
   account_numbers
   pos=$(position_of "$BOOK"); [ -n "$pos" ] && [ "$pos" != 0 ] || fail trade "No open position in $MNAME."
   pos=$(to_dec "$pos"); abs=${pos#-}
@@ -583,7 +709,7 @@ plan_close() {
 }
 
 plan_cancel() {
-  local id; id=$(arg 0); [ -n "$id" ] || fail trade "Usage: trade.sh cancel ORDER_ID."
+  local id; id=$(arg 0); [ -n "$id" ] || fail trade "Usage: pod trade cancel ORDER_ID."
   need_wallet; find_open_order "$id"
   get /clob/markets "$T/markets"
   local name; name=$(pj -r --arg b "$(echo "$ORDER" | jq -r .orderbook_id)" 'include "pod"; market_map[$b] // $b' "$T/markets")
@@ -628,7 +754,7 @@ plan_cancel_all() {
 }
 
 plan_edit() {
-  local id; id=$(arg 0); [ -n "$id" ] || fail trade "Usage: trade.sh edit ORDER_ID [--price P] [--size S]."
+  local id; id=$(arg 0); [ -n "$id" ] || fail trade "Usage: pod trade edit ORDER_ID [--price P] [--size S]."
   [ -n "$PRICE$SIZE_OPT" ] || fail trade "Say what to change: --price, --size, or both."
   need_wallet; find_open_order "$id"
   market_by_id "$(echo "$ORDER" | jq -r .orderbook_id)"
@@ -659,7 +785,7 @@ plan_edit() {
 
 plan_trigger() {   # stop-loss | take-profit
   local which="$1" q pos abs side ttype trig limit ref band size signed ioc=false rest
-  q=$(arg 0); [ -n "$q" ] && [ -n "$TRIG_PRICE" ] || fail trade "Usage: trade.sh $which MARKET --trigger-price P [--limit-price P] [--size S]."
+  q=$(arg 0); [ -n "$q" ] && [ -n "$TRIG_PRICE" ] || fail trade "Usage: pod trade $which MARKET --trigger-price P [--limit-price P] [--size S]."
   need_wallet; load_market "$q" false
   [ "$MTYPE" = perp ] || fail trade "Stop-loss and take-profit work on perp positions here."
   account_numbers
@@ -710,7 +836,7 @@ plan_trigger() {   # stop-loss | take-profit
 }
 
 plan_edit_trigger() {
-  local id; id=$(arg 0); [ -n "$id" ] || fail trade "Usage: trade.sh edit-trigger TRIGGER_ID [--trigger-price P] [--limit-price P] [--size S]."
+  local id; id=$(arg 0); [ -n "$id" ] || fail trade "Usage: pod trade edit-trigger TRIGGER_ID [--trigger-price P] [--limit-price P] [--size S]."
   [ -n "$TRIG_PRICE$LIMIT_PRICE$SIZE_OPT" ] || fail trade "Say what to change: --trigger-price, --limit-price or --size."
   need_wallet; find_trigger "$id"
   market_by_id "$(echo "$TRIG" | jq -r .orderbook_id)"
@@ -735,7 +861,7 @@ plan_edit_trigger() {
 }
 
 plan_cancel_trigger() {
-  local id; id=$(arg 0); [ -n "$id" ] || fail trade "Usage: trade.sh cancel-trigger TRIGGER_ID."
+  local id; id=$(arg 0); [ -n "$id" ] || fail trade "Usage: pod trade cancel-trigger TRIGGER_ID."
   need_wallet; find_trigger "$id"
   market_by_id "$(echo "$TRIG" | jq -r .orderbook_id)"
   echo "$TRIG" | pj --arg mname "$MNAME" 'include "pod";
@@ -756,10 +882,10 @@ case "$ACTION" in
   stop-loss|take-profit) plan_trigger "$ACTION" ;;
   edit-trigger)          plan_edit_trigger ;;
   cancel-trigger)        plan_cancel_trigger ;;
-  send)                  [ -n "$(arg 0)" ] || fail trade "Usage: trade.sh send PLAN_ID."; do_send "$(arg 0)" ;;
-  follow)                [ -n "$(arg 0)" ] || fail trade "Usage: trade.sh follow PLAN_ID [--timeout 30]."
+  send)                  [ -n "$(arg 0)" ] || fail trade "Usage: pod trade send PLAN_ID."; do_send "$(arg 0)" ;;
+  follow)                [ -n "$(arg 0)" ] || fail trade "Usage: pod trade follow PLAN_ID [--timeout 30]."
                          case "$TIMEOUT" in ''|*[!0-9]*) fail trade "--timeout is whole seconds." ;; esac
                          do_follow "$(arg 0)" "$TIMEOUT" ;;
-  "") fail trade "Name an action." "buy, sell, close, edit, cancel, cancel-all, stop-loss, take-profit, edit-trigger, cancel-trigger, send, follow." ;;
-  *)  fail trade "Unknown action '$ACTION'." "buy, sell, close, edit, cancel, cancel-all, stop-loss, take-profit, edit-trigger, cancel-trigger, send, follow." ;;
+  "") fail_usage trade "Name an action." "buy, sell, close, edit, cancel, cancel-all, stop-loss, take-profit, edit-trigger, cancel-trigger, send, follow." ;;
+  *)  fail_usage trade "Unknown action '$ACTION'." "buy, sell, close, edit, cancel, cancel-all, stop-loss, take-profit, edit-trigger, cancel-trigger, send, follow." ;;
 esac

@@ -1,12 +1,55 @@
 #!/usr/bin/env bash
-# Can the AI act on pod right now, and if not, why not? Also lists what it can and cannot do.
+# Can pod act right now, and if not, why not? Also lists what it can and cannot do.
+# Spec: specs/03-status.md.
 #
-# Usage:
-#   status.sh            full check: also signs a test message with the wallet (reads the Keychain)
-#   status.sh --quick    the same without signing
-#
-# Levels, first match wins: not set up · problem · connected, read-only · connected, untested ·
-# ready to trade. Spec: specs/03-status.md.
+#: pod status: can pod act on pod network right now, and if not, why not?
+#:
+#: Usage:
+#:   pod status           the full check: also signs a test message with the wallet (about 2 s)
+#:   pod status --quick   the same without signing (under 1 s)
+#:
+#: Run the full check when the person asks. Run --quick before other work when the state is unknown.
+#: Status never sends a transaction.
+#:
+#: Levels ("level"), the first that applies wins:
+#:   not set up            no wallet is connected. Can trade: no. Run pod setup
+#:   problem               something is broken: see "problems". Can trade: no
+#:   connected, read-only  pod is paused, or the account has no cash: see "warnings". Can trade: no
+#:   connected, untested   works, but no test transaction has passed and no real send has been
+#:                         accepted. Can trade: yes, with a warning
+#:   ready to trade        works, and sending is proven. Can trade: yes
+#:
+#: What to tell the person, in a few lines:
+#:   1. "summary", as given, e.g. "pod: ready to trade · 0x035A…Da70 · value $99.9967 · 1 position ·
+#:      0 orders · asks before trading". "Value" is the account value: cash plus the unrealized profit
+#:      or loss of open positions. It answers "how much do I have". Cash alone does not: opening a
+#:      perp only holds part of the cash as collateral, so cash barely moves.
+#:   2. Each entry in "problems": its "error", then its "fix".
+#:   3. Each entry in "warnings".
+#:   4. The trading settings, from settings.in_words. They are changed with pod settings.
+#:   5. "capabilities", only when asked what pod can do, or when trading is not possible: can or
+#:      cannot, with "why" for each cannot.
+#:
+#: Output fields:
+#:   check                 full or quick
+#:   network               name, chain_id, answers, writes_open (false when pod is paused or read-only:
+#:                         reading still works, sending does not)
+#:   wallet                type, keystore or env_var, address, present (the keystore and its Keychain
+#:                         entry exist, or the variable is set), signs (true or false after a full
+#:                         check, null after a quick one)
+#:   account               account_value_usd, cash_usd, unrealized_pnl_usd, withdrawable_usd,
+#:                         open_positions, open_orders, frozen. Status does not list each position:
+#:                         use pod account positions
+#:   proof.test_transaction   the last test transaction: passed or failed, with its time
+#:   proof.last_send       the latest real send: accepted (ok: true), or refused with lasting: true
+#:                         (region block, blacklist, frozen account) or lasting: false (passing errors
+#:                         such as a timeout). A lasting refusal makes the level "problem" until a
+#:                         later send is accepted or a test passes
+#:   settings              approval (ask or auto), market_band_pct, default_ttl, in_words
+#:   capabilities          each with name, can, and why or note
+#:
+#: Not part of pod: deposits, withdrawals, transfers between accounts, bot keys, recovering a frozen
+#: account. Say so plainly when asked for them.
 
 source "$(dirname "$0")/lib.sh"
 HERE="$(dirname "$0")"
@@ -15,7 +58,7 @@ mode=full
 case "${1:-}" in
   --quick) mode=quick ;;
   "") ;;
-  *) fail status "Unknown option $1." "Use --quick, or nothing for the full check." ;;
+  *) fail_usage status "Unknown option $1." "Use --quick, or nothing for the full check. See pod status --help." ;;
 esac
 
 problems="[]"; warnings="[]"
@@ -73,7 +116,7 @@ if $has_profile; then
   if [ "$wtype" = "keystore" ]; then
     wref=$(profile_get '.wallet.keystore')
     if [ ! -f "$KEYSTORE_DIR/$wref" ]; then
-      add_problem wallet "The keystore $wref is no longer in $KEYSTORE_DIR." "Restore it, or connect another wallet with /pod:setup."
+      add_problem wallet "The keystore $wref is no longer in $KEYSTORE_DIR." "Restore it, or connect another wallet with pod setup."
     elif ! security find-generic-password -s "$KEYCHAIN_SERVICE" -a "$wref" >/dev/null 2>&1; then
       add_problem wallet "The keystore $wref has no password in the Keychain." "Run: security add-generic-password -s $KEYCHAIN_SERVICE -a $wref -w"
     else
@@ -82,20 +125,20 @@ if $has_profile; then
   else
     wref=$(profile_get '.wallet.env_var')
     if [ -z "${!wref:-}" ]; then
-      add_problem wallet "The variable $wref is not set in this session." "Export it in the shell that starts Claude Code."
+      add_problem wallet "The variable $wref is not set in this session." "Export it in the shell that runs pod."
     else
       present=true
     fi
   fi
 
   if [ "$mode" = full ] && $present; then
-    msg="pod plugin status check $(now_iso)"
+    msg="pod status check $(now_iso)"
     sig=$("$HERE/wallet.sh" sign-message "$msg" 2>/dev/null | jq -r '.signature // empty')
     if [ -n "$sig" ] && cast wallet verify --address "$ADDR" "$msg" "$sig" >/dev/null 2>&1; then
       signs=true
     else
       signs=false
-      add_problem wallet "The wallet could not sign as $ADDR." "Check the keystore password or the private key; or connect again with /pod:setup."
+      add_problem wallet "The wallet could not sign as $ADDR." "Check the keystore password or the private key; or connect again with pod setup."
     fi
   fi
 
@@ -113,7 +156,7 @@ if $has_profile && $net_up; then
     frozen=false
     if [ -s "$D/diag" ] && [ "$(jq '.result | (.is_locked or .needs_recovery or .equivocating)' "$D/diag")" = "true" ]; then
       frozen=true
-      add_problem account "The account is frozen on pod (locked or waiting for recovery)." "Recovery is not part of this plugin; see pod's guide 'Recover a locked account'."
+      add_problem account "The account is frozen on pod (locked or waiting for recovery)." "Recovery is not part of pod; see pod's guide 'Recover a locked account'."
     fi
     # Account value = cash + unrealized profit or loss. It is the "how much do I have" number:
     # opening a perp barely moves cash, because cash is only held as collateral.
@@ -142,8 +185,8 @@ if $has_profile; then
       elif (($t != null and $t.result == "passed") or ($s != null and $s.ok == true)) then "proven"
       else "unproven" end')
   case "$verdict" in
-    lasting-failure) add_problem sending "$(echo "$proof" | jq -r '.last_send.error')" "Pod refuses this account's transactions; a test with /pod:setup shows whether it still does." ;;
-    test-failed)     add_problem sending "The test transaction failed: $(echo "$proof" | jq -r '.test_transaction.error')" "Run the test again with /pod:setup." ;;
+    lasting-failure) add_problem sending "$(echo "$proof" | jq -r '.last_send.error')" "Pod refuses this account's transactions; pod setup test shows whether it still does." ;;
+    test-failed)     add_problem sending "The test transaction failed: $(echo "$proof" | jq -r '.test_transaction.error')" "Run the test again: pod setup test." ;;
     proven)          proven=true ;;
   esac
 fi
@@ -162,7 +205,7 @@ elif ! $funded; then
   level="connected, read-only"; reason="the account has no cash on pod"
 elif ! $proven; then
   level="connected, untested"
-  add_warning "No test transaction has passed yet, so trading is unproven: the first trade will be the proof. To prove it first, run the test with /pod:setup."
+  add_warning "No test transaction has passed yet, so trading is unproven: the first trade will be the proof. To prove it first, run pod setup test."
 else
   level="ready to trade"
 fi
@@ -171,7 +214,7 @@ fi
 can_trade=$([ "$level" = "ready to trade" ] || [ "$level" = "connected, untested" ] && echo true || echo false)
 trade_why=""
 case "$level" in
-  "not set up") trade_why="no wallet is connected; run /pod:setup" ;;
+  "not set up") trade_why="no wallet is connected; run pod setup" ;;
   problem) trade_why="$(echo "$problems" | jq -r '.[0].error')" ;;
   "connected, read-only") trade_why="$reason" ;;
   "connected, untested") trade_why="allowed, but not yet proven" ;;
@@ -179,7 +222,7 @@ esac
 
 summary_line=""
 case "$level" in
-  "not set up") summary_line="pod: not set up · run /pod:setup to connect a wallet" ;;
+  "not set up") summary_line="pod: not set up · run pod setup to connect a wallet" ;;
   problem) summary_line="pod: problem · $(echo "$problems" | jq -r '.[0].error')" ;;
   "connected, read-only") summary_line="pod: read-only · $reason · $(short_addr "$ADDR")" ;;
   *)
@@ -209,11 +252,11 @@ jq -n --arg level "$level" --arg mode "$mode" --arg line "$summary_line" --argjs
    capabilities: [
      {name: "read markets and prices", can: $net_up},
      {name: "read any account", can: $net_up},
-     ({name: "follow live updates", can: $live_can, note: "a listener runs as a background process of the session"}
+     ({name: "follow live updates", can: $live_can, note: "pod live runs as a background process"}
       + (if $live_why == "" then {} else {why: $live_why} end)),
      ({name: "trade with this wallet", can: $can_trade} + (if $trade_why == "" then {} else {why: $trade_why} end)),
-     {name: "deposit, withdraw, transfer", can: false, why: "not part of this plugin"},
-     {name: "bot keys (delegation)", can: false, why: "not part of this plugin"},
-     {name: "recover a frozen account", can: false, why: "not part of this plugin"}
+     {name: "deposit, withdraw, transfer", can: false, why: "not part of pod"},
+     {name: "bot keys (delegation)", can: false, why: "not part of pod"},
+     {name: "recover a frozen account", can: false, why: "not part of pod"}
    ],
    problems: $problems, warnings: $warnings}'

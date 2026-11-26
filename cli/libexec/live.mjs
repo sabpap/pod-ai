@@ -1,4 +1,4 @@
-// Follow pod live over its WebSocket and print one JSON line per update. Started by live.sh, which
+// Follow pod live over its WebSocket and print one JSON line per update. Started by live.sh (pod live), which
 // checks the arguments, resolves market names and accounts, and passes one JSON config as argv[2].
 //
 // Lines:
@@ -31,14 +31,14 @@ function refuse(error, fix) {
 
 let conds;
 try { conds = (cfg.until || []).map((c) => L.parseCondition(c, cfg.channel)); }
-catch (e) { refuse(e.message, 'See the fields for each channel in the live skill.'); }
+catch (e) { refuse(e.message, 'pod live --help lists the fields for each channel.'); }
 if (cfg.raw && conds.length) refuse('--raw prints pod\'s messages unchanged, so it cannot test conditions.', 'Drop --raw or --until.');
 
 const every = (cfg.every_s ?? ch.every) * 1000;
 const ctx = { markets: cfg.markets || {}, market: cfg.filter_market || null, order: cfg.order ? cfg.order.toLowerCase() : null, cache: new Map() };
 const human = (s) => (s === 0 ? 'every change' : s % 3600 === 0 ? `${s / 3600}h` : s % 60 === 0 ? `${s / 60}m` : `${s}s`);
 
-// --- registry: lets `live.sh list` and `live.sh stop` find this listener ---------------------------------
+// --- registry: lets `pod live list` and `pod live stop` find this listener ---------------------------------
 
 const id = 'l' + crypto.randomBytes(3).toString('hex');
 const regDir = path.join(cfg.home, 'live');
@@ -279,7 +279,7 @@ function connect() {
           event: 'watching', id, channel: cfg.channel, what: cfg.what,
           until: conds.map((c) => c.text), every: human(every / 1000),
           for: cfg.for_s ? human(cfg.for_s) : 'until stopped or the session ends',
-          stop: `live.sh stop ${id}`,
+          stop: `pod live stop ${id}`,
         });
       } else if (lostAt !== null) {
         const gap = Math.round((Date.now() - lostAt) / 1000);
@@ -306,7 +306,7 @@ function connect() {
   ws.onclose = () => {
     if (stopping) return;
     failures += 1;
-    if (!subscribedOnce && failures >= 4) refuse(`Could not open pod's live connection at ${cfg.ws_url}.`, 'Check the network, then try again; /pod:status tells whether pod answers.');
+    if (!subscribedOnce && failures >= 4) refuse(`Could not open pod's live connection at ${cfg.ws_url}.`, 'Check the network, then try again; pod status tells whether pod answers.');
     if (subscribedOnce && lostAt === null) {
       lostAt = Date.now();
       out({ event: 'notice', message: 'Connection to pod lost; reconnecting.' });

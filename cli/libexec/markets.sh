@@ -1,26 +1,93 @@
 #!/usr/bin/env bash
 # What is traded on pod, at what price, how deep the book is and how prices moved. Read-only.
+# Spec: specs/06-market-data.md.
 #
-# Usage:
-#   markets.sh [VIEW] [MARKET | QUERY] [options]
-#
-#   list [QUERY]   every active market with its price (default view); QUERY narrows by name
-#                  --type perp|spot  --sort volume|change|name|open-interest|funding  --all  --limit N
-#   movers         biggest 24-hour rises and falls, and the most traded  --limit N (per group, default 5)
-#   market MARKET  one market: price, 24-hour numbers, funding, spread, and its trading rules
-#   book MARKET    the order book  --depth N (levels per side, default 10)
-#                  --size N [--side buy|sell]: what a market order of that size would clear at now
-#   bars MARKET    price bars  --resolution 1m|5m|15m|30m|1h|4h|1d|1w|1M (default 1h)
-#                  --limit N (1 to 1000, default 50)  --since WHEN
-#   rounds MARKET  per-round history: traded price, mark, oracle, volume, funding, open interest
-#                  --limit N (1 to 1000, default 20)  --since WHEN
-#
-#   MARKET   loose: NVDA, nvidia, "NVDA perp", "NVDA spot", or the 0x market id. Perps win unless
-#            --spot or "spot" is given.
-#   --raw    pod's answers unchanged
-#
-# The headline price is the mark price on perps and the last traded price on spot. Fields the plugin
-# works out itself are named in "computed". Spec: specs/06-market-data.md.
+#: pod markets: what is traded on pod, at what price, how deep the book is and how prices moved.
+#:
+#: Usage:
+#:   pod markets [VIEW] [MARKET | QUERY] [options]
+#:
+#: Views:
+#:   list [QUERY]    every active market with its price (the default view); QUERY narrows by name
+#:                   --type perp|spot  --sort volume|change|name|open-interest|funding  --all  --limit N
+#:   movers          the biggest 24-hour rises and falls, and the most traded  --limit N (per group, default 5)
+#:   market MARKET   one market: price, 24-hour numbers, funding, spread, and its trading rules
+#:   book MARKET     the order book  --depth N (levels per side, default 10)
+#:                   --size N [--side buy|sell]: what a market order of that size would clear at now
+#:   bars MARKET     closed price bars  --resolution 1m|5m|15m|30m|1h|4h|1d|1w|1M (default 1h)
+#:                   --limit N (1 to 1000, default 50)  --since WHEN
+#:   rounds MARKET   per-round history: traded price, mark, oracle, volume, funding, open interest
+#:                   --limit N (1 to 1000, default 20)  --since WHEN
+#:
+#: Options:
+#:   --type perp|spot   list only one kind of market
+#:   --sort S           list order: volume (default), change, name, open-interest, funding
+#:   --all              also list disabled markets
+#:   --limit N          list: 1 to 100 (default 100); movers: 1 to 20 (default 5); bars: 1 to 1000
+#:                      (default 50); rounds: 1 to 1000 (default 20)
+#:   --depth N          book: levels per side, 1 to 500 (default 10)
+#:   --size N           book: a size in units of the asset; adds an estimate of what it would cost now
+#:   --side buy|sell    book with --size: only one side's estimate
+#:   --resolution R     bars: the bar size, 1m 5m 15m 30m 1h 4h 1d 1w 1M (default 1h)
+#:   --since WHEN       bars and rounds: 30m, 24h, 7d, 2026-11-01 or 2026-11-01T12:00:00Z (UTC)
+#:   --spot             pick the spot market when a name has both a perp and a spot market
+#:   --raw              pod's answers unchanged
+#:
+#: Pick the command from the question:
+#:   "what can I trade?", "list the markets"      pod markets  (every active market, most traded first)
+#:   "is there a Hynix market?", "find gold"      pod markets list hynix  (QUERY matches ticker and name)
+#:   "only perps", "sorted by funding"            pod markets list --type perp --sort funding
+#:   "top movers", "what's moving?"               pod markets movers
+#:   "what's NVDA's price?", "how is NVDA doing?"  pod markets market NVDA
+#:   "NVDA order book", "what's the spread?"      pod markets book NVDA  (--depth 20 for more levels)
+#:   "what would buying 10 NVDA cost now?"        pod markets book NVDA --size 10 --side buy
+#:   "hourly bars for the last day"               pod markets bars NVDA --resolution 1h --since 24h
+#:   "daily gold bars"                            pod markets bars gold --resolution 1d
+#:   "funding history", "mark vs oracle lately"    pod markets rounds NVDA --limit 200
+#:
+#: Markets are named loosely: NVDA, nvidia, "NVDA perp", "NVDA spot", or the 0x market id. A name
+#: with both a perp and a spot market means the perp; add "spot" or --spot for the other.
+#:
+#: Which price:
+#:   price          the headline price: the mark price on perps, the last traded price on spot. Quote
+#:                  this one and say which it is (price_kind). Market orders start from the same price
+#:   mark_price     perps only. What positions are valued and liquidated at; pod smooths it against
+#:                  the oracle
+#:   last_price     the price the latest auction round cleared at
+#:   oracle_price   perps only. The outside reference price, e.g. the real NVDA stock
+#:   oracle_stale   true: every outside source is stale (for a stock, usually because its exchange is
+#:                  closed), so pod derives the oracle from its own book. Say so when quoting the price
+#:
+#: The market view: "summary" is one line to give the person, e.g. "NVDA perp $150.08 (mark) ·
+#: +5.32% in 24 h · oracle stale: derived from the book · funding 0.01% per 8 h, longs pay shorts ·
+#: spread $0.6 (0.4%)". Behind it: change_24h_pct, high_24h, low_24h, volume_24h_usd (USD traded),
+#: funding (rate_pct per every_hours, per_year_pct, who_pays), open_interest_usd, mark_vs_oracle_pct,
+#: book (best_bid, best_ask, mid, spread, spread_pct) and rules (maker and taker fee, price_step,
+#: size_step, min_order_value_usd, max_leverage, initial_margin_pct, halts_at).
+#:
+#: The book and the cost of a size: bids and asks are best first, each level with its size and the
+#: running total_size and total_value_usd. With --size N, "estimate" says, per side:
+#:   clears_at_about       pod clears each market once per round at one price for everyone, so a
+#:                         market order of that size would clear at about the price where the resting
+#:                         orders first cover it, not at an average across levels. Orders arriving in
+#:                         the same round can move it
+#:   value_usd, fee_usd    the value at that price and the taker fee on it; vs_mid_pct: distance from mid
+#:   enough_depth          false, with fills_size, when the book holds less than the size
+#:   within_default_band   whether that price lies inside the market-order band (pod settings), so a
+#:                         plain market order would fill
+#:
+#: Bars and rounds: bars are closed bars, newest first (the bar still forming is left out; pod live
+#: bars builds it), with a summary over them: change, high, low, volume and USD value. rounds is pod's
+#: record per auction round (two a second): traded price, mark, oracle, volume, funding rate and
+#: open interest.
+#:
+#: Output: ok, view, as_of, data; lists add count and more (true when more exists beyond --limit);
+#: computed names the fields worked out rather than read from pod (spread, mid, mark-vs-oracle gap,
+#: funding per year, running book totals, the size estimate and the bar summary). Amounts are exact
+#: decimal strings in USD or units of the asset; percentages are already in percent.
+#:
+#: Not here: company information (descriptions, exchange hours) is not in pod's API. Holdings are
+#: pod account; continuous updates are pod live; placing orders is pod trade.
 
 source "$(dirname "$0")/lib.sh"
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -44,7 +111,7 @@ while [ $# -gt 0 ]; do
     --since) since="${2:-}"; shift 2 || fail markets "--since needs a value, e.g. 7d." ;;
     --spot) spot=true; shift ;;
     --raw) raw=true; shift ;;
-    -*) fail markets "Unknown option $1." "Options: --type, --sort, --all, --limit, --depth, --size, --side, --resolution, --since, --spot, --raw." ;;
+    -*) fail_usage markets "Unknown option $1." "See pod markets --help. Options: --type, --sort, --all, --limit, --depth, --size, --side, --resolution, --since, --spot, --raw." ;;
     *) if [ -z "$view" ] && [ -z "$words" ] && case " $VIEWS " in *" $1 "*) true ;; *) false ;; esac; then view="$1"
        else words="${words:+$words }$1"; fi
        shift ;;
@@ -64,12 +131,12 @@ case "$view" in
 esac
 { whole "$limit" && [ "$limit" -ge 1 ] && [ "$limit" -le "$max" ]; } || fail markets "--limit must be a whole number from 1 to $max for $view."
 case "$view" in
-  market|book|bars|rounds) [ -n "$words" ] || fail markets "Name a market, e.g. markets.sh $view NVDA." ;;
-  movers) [ -z "$words" ] || fail markets "movers takes no market name." "Use markets.sh market NAME for one market." ;;
+  market|book|bars|rounds) [ -n "$words" ] || fail markets "Name a market, e.g. pod markets $view NVDA." ;;
+  movers) [ -z "$words" ] || fail markets "movers takes no market name." "Use pod markets market NAME for one market." ;;
 esac
 [ -z "$mtype" ] || case "$mtype" in perp|spot) ;; *) fail markets "--type must be perp or spot." ;; esac
-case " $SORTS " in *" $sort "*) ;; *) fail markets "Unknown sort '$sort'." "Sorts: $SORTS." ;; esac
-case " $RESOLUTIONS " in *" $resolution "*) ;; *) fail markets "Unknown bar size '$resolution'." "Bar sizes: $RESOLUTIONS." ;; esac
+case " $SORTS " in *" $sort "*) ;; *) fail_usage markets "Unknown sort '$sort'." "Sorts: $SORTS." ;; esac
+case " $RESOLUTIONS " in *" $resolution "*) ;; *) fail_usage markets "Unknown bar size '$resolution'." "Bar sizes: $RESOLUTIONS." ;; esac
 { whole "$depth" && [ "$depth" -ge 1 ] && [ "$depth" -le 500 ]; } || fail markets "--depth must be a whole number from 1 to 500."
 if [ -n "$size" ]; then
   [ "$view" = book ] || fail markets "--size is for the book view."
@@ -108,7 +175,7 @@ case "$view" in
   market|book|bars|rounds)
     jq --arg q "$words" --argjson s "$spot" -L "$HERE" 'include "pod"; find_market($q; $s)' "$T/markets" > "$T/market"
     [ "$(cat "$T/market")" != "null" ] || fail markets "No market called '$words'." \
-      "Name it by its ticker (e.g. NVDA), add 'spot' for the spot market, or search with markets.sh list $words."
+      "Name it by its ticker (e.g. NVDA), add 'spot' for the spot market, or search with pod markets list $words."
     MID=$(jq -r .id "$T/market") ;;
 esac
 
@@ -127,7 +194,7 @@ case "$view" in
       fetch_book "/clob/orderbook/$MID?depth=$depth" "$T/book"; echo '{"markets":[]}' > "$T/stats"
     fi
     [ "$(cat "$T/book")" != '{}' ] || fail markets "$(jq -r '.base_token_symbol + " " + .market_type' "$T/market") has no order book yet: it has never traded (status $(jq -r .status "$T/market"))." \
-      "Pod builds the book when the market first clears. markets.sh market NAME shows its rules."
+      "Pod builds the book when the market first clears. pod markets market NAME shows its rules."
     keep_page "$T/book" '[]' ;;
   bars)
     # Newest first, at most 500 a page. The bar still forming is dropped after pod applies `limit`,
@@ -189,7 +256,7 @@ def funding($m; $st):
        who_pays: (if $r > 0 then "longs pay shorts" elif $r < 0 then "shorts pay longs" else "nobody" end)}
     end;
 # The headline price: the mark price on perps (what positions are valued and liquidated at), the
-# last traded price on spot (which has no mark). trade.sh starts market orders from the same price.
+# last traded price on spot (which has no mark). pod trade starts market orders from the same price.
 def live($m; $st):
   ($m.market_type == "perp") as $perp
   | ($st.last_clearing_price | opt_price) as $last

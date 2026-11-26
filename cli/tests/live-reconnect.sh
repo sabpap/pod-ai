@@ -4,11 +4,11 @@
 # and that a condition still ends it. Reads pod staging's REST API for the market names. Needs deno;
 # skipped without it.
 #
-# Usage: plugins/pod/tests/live-reconnect.sh
+# Usage: cli/tests/live-reconnect.sh
 
 set -uo pipefail
 D="$(cd "$(dirname "$0")" && pwd)"
-S="$D/../scripts"
+POD="$D/../pod"
 command -v deno >/dev/null 2>&1 || { echo "skip live reconnect (deno is not installed)"; exit 0; }
 
 export POD_PLUGIN_HOME="$(mktemp -d)"
@@ -20,7 +20,7 @@ disown "$server" 2>/dev/null || true   # no "Terminated" line when it is stopped
 trap 'kill $server 2>/dev/null; rm -rf "$POD_PLUGIN_HOME"' EXIT
 for _ in $(seq 1 50); do grep -q listening "$log" 2>/dev/null && break; sleep 0.1; done
 
-out=$(POD_TEST_WS="ws://127.0.0.1:$port" "$S/live.sh" book nvda --every 0 --until "best_bid > 199" --for 30s)
+out=$(POD_TEST_WS="ws://127.0.0.1:$port" "$POD" live book nvda --every 0 --until "best_bid > 199" --for 30s)
 
 pass=0; failed=0
 check() {   # check NAME JQ_EXPR INPUT

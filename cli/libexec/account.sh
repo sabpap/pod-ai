@@ -1,18 +1,80 @@
 #!/usr/bin/env bash
 # What an account holds, what it is worth and what it has done. Read-only; works for any address.
+# Spec: specs/04-account.md.
 #
-# Usage:
-#   account.sh [VIEW] [ADDRESS] [--since WHEN] [--limit N] [--status STATUS] [--raw]
-#
-#   VIEW     overview (default) | positions | orders | trades | triggers | activity | forced-closes | results
-#   ADDRESS  any 0x address; default: the connected wallet
-#   --since  30m, 24h, 7d, 2026-11-01 or 2026-11-01T12:00:00Z (trades, activity, results; results default 7d)
-#   --limit  entries for list views, 1 to 5000 (default 50)
-#   --status orders only: open (default), all, or one of pod's statuses
-#   --raw    pod's answers unchanged, page by page
-#
-# Amounts are exact decimal strings in USD or units of the asset. Fields the plugin works out
-# itself, rather than reading from pod, are named in "computed". Spec: specs/04-account.md.
+#: pod account: what an account holds, what it is worth and what it has done.
+#:
+#: Usage:
+#:   pod account [VIEW] [ADDRESS] [--since WHEN] [--limit N] [--status STATUS] [--raw]
+#:
+#: ADDRESS defaults to the connected wallet. Any 0x address can be read: pod's account data is
+#: public, and no key is needed. Nothing here sends a transaction.
+#:
+#: Pick the view from the question:
+#:   "what do I have?", "what's my balance?"           overview (the default)
+#:   "what are my positions?", "am I near liquidation?"  positions
+#:   "what orders are open?"                            orders
+#:   "what did I buy and sell?", "what did I pay in fees?"  trades
+#:   "which stops and targets are set?"                 triggers
+#:   "what happened on my account?"                     activity
+#:   "was I liquidated?"                                forced-closes
+#:   "how did this week go?", "profit since Monday?"     results
+#:
+#: Options:
+#:   --since WHEN   only entries after this time: 30m, 24h, 7d, 2026-11-01 or 2026-11-01T12:00:00Z
+#:                  (UTC). For trades, activity and results (results default 7d)
+#:   --limit N      how many entries, 1 to 5000, newest first. Default 50. For orders, trades,
+#:                  triggers, activity and forced-closes
+#:   --status S     orders only: open (default), all, or one of pending, active, filled, expired,
+#:                  canceled, margin_canceled, self_trade_canceled, post_only_refused, settled, invalid
+#:   --raw          pod's answers unchanged, page by page. Only when pod's own data is asked for, or a
+#:                  field is needed that the views leave out
+#:
+#: Output: ok, view, account, connected (true when it is the connected wallet), as_of, data; list
+#: views add count and more; computed names the fields pod works out rather than reads.
+#:   more: true     more entries exist beyond --limit: say so, and offer a larger --limit or a --since
+#:
+#: How to read the numbers:
+#:   Amounts are exact decimal strings, in USD (fields ending _usd) or in units of the asset (size).
+#:   Account value is what the account is worth: cash plus unrealized profit or loss (and spot
+#:   holdings at their price). It answers "how much do I have". Cash alone does not: a perp position
+#:   only holds part of the cash as collateral (margin).
+#:   computed: margin in use, free margin, real leverage, lifetime profit or loss, return on margin,
+#:   distance to liquidation and the results totals are worked out from pod's data. Say "about" or
+#:   "worked out from pod's data" when quoting them.
+#:   liquidation_price: null means the position has none at its current size and margin. Not $0.
+#:   pod_leverage on a position is pod's figure for that position alone (value / margin).
+#:   real_leverage in the overview is the whole account's: all positions' value / account value.
+#:   funding_owed_usd: positive means the account owes funding on that position; negative, it is owed.
+#:   Pod keeps no funding history, so funding on closed positions is not visible.
+#:   results.realized_pnl_usd adds up the profit or loss pod recorded on each trade in the window;
+#:   results.lifetime comes from pod directly.
+#:
+#: Fields by view:
+#:   overview    account_value_usd, cash_usd, unrealized_pnl_usd, realized_pnl_lifetime_usd,
+#:               lifetime_pnl_usd, withdrawable_usd, net_deposits_usd, margin_in_use_usd,
+#:               free_margin_usd, real_leverage, open_positions, spot_holdings, open_orders, holdings
+#:   positions   market, side, size, entry_price, mark_price, value_usd, margin_usd, pod_leverage,
+#:               unrealized_pnl_usd, return_on_margin_pct, funding_owed_usd, liquidation_price,
+#:               liquidation_distance_pct; spot holdings: size, free, locked_in_orders, cost_basis_usd
+#:   orders      market, side, direction, type, size, filled_size, price, average_fill_price, status,
+#:               flags, fee_usd, realized_pnl_usd, joined_book, deadline, ends, order_id, tx_hash
+#:   trades      time, market, side, size, price, value_usd, fee_usd, type, order_id
+#:   triggers    market, type, side, size ("whole position" when it closes all), trigger_price,
+#:               limit_price, flags, ends, order_id (the trigger id for pod trade edit-trigger)
+#:   activity    time, kind (order, fill, termination, modify, backstop, settlement,
+#:               bridge_transfer, transfer, ...), description (one plain sentence), order_id, tx, market
+#:   forced-closes  time, market, size, cash_usd, mark_price, equity_usd, realized_pnl_usd
+#:   results     trades, traded_value_usd, fees_paid_usd, realized_pnl_usd, deposits_usd,
+#:               withdrawals_usd, transfers_in_usd, transfers_out_usd, forced_closes, settlements,
+#:               lifetime, funding_owed_on_open_positions_usd
+#:
+#: Answer the question asked in a few lines or a small table; do not paste the JSON. Quote amounts to
+#: a sensible precision and keep the sign. Name the account when it is not the connected wallet.
+#:
+#: When it fails: "Pod answered ... with an error (503: clob indexer unavailable)" means pod's history
+#: service is down: trades, activity and results cannot be read until it is back, while overview,
+#: positions and orders usually still work.
 
 source "$(dirname "$0")/lib.sh"
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -28,10 +90,10 @@ while [ $# -gt 0 ]; do
     --status) status="${2:-}"; shift 2 || fail account "--status needs a value." ;;
     --raw) raw=true; shift ;;
     0x*|0X*) addr="$1"; shift ;;
-    -*) fail account "Unknown option $1." "Options: --since, --limit, --status, --raw." ;;
+    -*) fail_usage account "Unknown option $1." "Options: --since, --limit, --status, --raw. See pod account --help." ;;
     *) case " $VIEWS " in
          *" $1 "*) view="$1"; shift ;;
-         *) fail account "Unknown view '$1'." "Views: $VIEWS." ;;
+         *) fail_usage account "Unknown view '$1'." "Views: $VIEWS. See pod account --help." ;;
        esac ;;
   esac
 done
@@ -46,7 +108,7 @@ fi
 
 connected=false
 if [ -z "$addr" ]; then
-  profile_exists || fail account "No address was named and no wallet is connected." "Name an address, or connect a wallet with /pod:setup."
+  profile_exists || fail account "No address was named and no wallet is connected." "Name an address, or connect a wallet with pod setup."
   addr=$(profile_get '.wallet.address')
 fi
 echo "$addr" | grep -Eq '^0[xX][0-9a-fA-F]{40}$' || fail account "'$addr' is not an account address (0x and 40 hex characters)."

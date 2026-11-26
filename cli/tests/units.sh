@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Offline tests of the number helpers in scripts/lib.sh. No network, no wallet.
-# Usage: plugins/pod/tests/units.sh
+# Offline tests of the number helpers in libexec/lib.sh. No network, no wallet.
+# Usage: cli/tests/units.sh
 
 set -uo pipefail
-source "$(cd "$(dirname "$0")/../scripts" && pwd)/lib.sh"
+export POD_CLI=1   # lib.sh runs only under the pod command
+source "$(cd "$(dirname "$0")/../libexec" && pwd)/lib.sh"
 set +e   # lib.sh turns on -e; a failed comparison here must not stop the run
 
 pass=0; failed=0
@@ -49,7 +50,7 @@ eq "money zero"                "$(money 0)"                   "0"
 eq "money negative"            "$(money -0.00264895718243)"   "-0.0026"
 
 # pod.jq: exact conversion of pod's numbers, as the account views use it
-J() { jq -rn -L "$(cd "$(dirname "$0")/../scripts" && pwd)" "include \"pod\"; $1"; }
+J() { jq -rn -L "$(cd "$(dirname "$0")/../libexec" && pwd)" "include \"pod\"; $1"; }
 eq "jq: hex price"             "$(J '"0x82ff658cf0b3f0000" | amount')"   "151.03"
 eq "jq: hex margin"            "$(J '"0x10c487e0e36b000" | amount')"     "0.075515"
 eq "jq: negative decimal"      "$(J '"-2648957182430000" | amount')"     "-0.00264895718243"

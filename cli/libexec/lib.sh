@@ -1,11 +1,19 @@
-# Shared helpers for the pod plugin's scripts. Sourced, never run directly.
+# Shared helpers for the pod command's scripts. Sourced, never run directly.
 # Works with the macOS system bash (3.2): no associative arrays, no ${x,,}.
 #
 # Every script prints exactly one JSON object on stdout:
 #   success: {"ok": true, ...}
 #   failure: {"ok": false, "step": "...", "error": "...", "fix": "..."}   (exit code 1)
+#   usage:   the same shape with exit code 2 (unknown command or option)
 
 set -euo pipefail
+
+# The scripts run only through the pod command (cli/pod), which sets POD_CLI=1. This keeps one
+# entry point, one manual and one place for the approval hook to watch.
+if [ "${POD_CLI:-}" != 1 ]; then
+  printf '%s\n' '{"ok": false, "step": "usage", "error": "This script runs only through the pod command.", "fix": "Run pod help to see the commands."}'
+  exit 2
+fi
 
 # --- where things live ---------------------------------------------------------------------------
 
@@ -14,7 +22,7 @@ PROFILE="$POD_HOME/profile.json"
 KEYSTORE_DIR="${POD_KEYSTORE_DIR:-$HOME/.foundry/keystores}"
 KEYCHAIN_SERVICE="foundry-keystore"
 
-# --- the only network the plugin may send on (decision S9) ---------------------------------------
+# --- the only network pod may send on (decision S9) ----------------------------------------------
 
 STAGING_NAME="staging"
 STAGING_CHAIN_ID=129302
@@ -39,6 +47,13 @@ fail() {
   jq -n --arg step "$1" --arg error "$2" --arg fix "${3:-}" \
     '{ok: false, step: $step, error: $error} + (if $fix == "" then {} else {fix: $fix} end)'
   exit 1
+}
+
+# fail_usage STEP ERROR [FIX]: like fail, for an unknown command or option: exit code 2.
+fail_usage() {
+  jq -n --arg step "$1" --arg error "$2" --arg fix "${3:-}" \
+    '{ok: false, step: $step, error: $error} + (if $fix == "" then {} else {fix: $fix} end)'
+  exit 2
 }
 
 now_iso() { date -u +%Y-%m-%dT%H:%M:%SZ; }
@@ -89,7 +104,7 @@ require_staging() {
   id=$(printf '%d' "$hex")
   [ "$id" = "$STAGING_CHAIN_ID" ] || fail network \
     "The network answered with chain id $id, not pod staging ($STAGING_CHAIN_ID). Nothing was sent." \
-    "The plugin only sends on pod staging."
+    "pod only sends on pod staging."
 }
 
 # --- numbers -----------------------------------------------------------------------------------------

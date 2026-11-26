@@ -2,11 +2,20 @@
 # The wallet contract every section uses. It hides whether the key is a Foundry keystore (password in
 # the macOS Keychain) or a private key in an environment variable.
 #
-# Usage:
-#   wallet.sh [--keystore NAME | --env VAR] address
-#   wallet.sh [--keystore NAME | --env VAR] type
+# Internal use, by other scripts:
 #   wallet.sh [--keystore NAME | --env VAR] sign-message MESSAGE
 #   wallet.sh [--keystore NAME | --env VAR] send TO SIGNATURE [ARGS...] [--nonce N]
+# The pod command exposes only address and type; trades are sent through pod trade, never here.
+#
+#: pod wallet: the connected wallet's address and type.
+#:
+#: Usage:
+#:   pod wallet address    the connected wallet's address (for a keystore that does not store it in
+#:                         clear, this reads the Keychain password to decrypt it)
+#:   pod wallet type       keystore or env, with the keystore's or the variable's name
+#:
+#: Output fields: address, type, and keystore or env_var.
+#: Wallets are connected with pod setup; orders are sent with pod trade. pod wallet never sends.
 #
 # Without --keystore or --env, the wallet comes from the saved profile.
 # `send` encodes the call, signs it with Foundry's cast, and sends it with eth_sendRawTransaction.
@@ -25,7 +34,7 @@ case "${1:-}" in
   --env)      wtype="env";      wref="${2:-}"; shift 2 || true ;;
 esac
 if [ -z "$wtype" ]; then
-  profile_exists || fail wallet "No wallet is connected." "Run /pod:setup first."
+  profile_exists || fail wallet "No wallet is connected." "Connect one with pod setup."
   from_profile=true
   wtype=$(profile_get '.wallet.type')
   if [ "$wtype" = "keystore" ]; then wref=$(profile_get '.wallet.keystore'); else wref=$(profile_get '.wallet.env_var'); fi
@@ -45,7 +54,7 @@ trap 'exit 130' INT TERM
 load_signer() {
   if [ "$wtype" = "keystore" ]; then
     local ks="$KEYSTORE_DIR/$wref"
-    [ -f "$ks" ] || fail wallet "There is no keystore called $wref in $KEYSTORE_DIR." "Run list-wallets.sh to see the keystores."
+    [ -f "$ks" ] || fail wallet "There is no keystore called $wref in $KEYSTORE_DIR." "Run pod setup wallets to see the keystores."
     command -v security >/dev/null 2>&1 || fail wallet "The macOS Keychain tool (security) is not available." "Use an environment-variable wallet on this machine."
     trap cleanup EXIT
     trap 'exit 130' INT TERM
@@ -60,7 +69,7 @@ load_signer() {
     SIGNER=(--keystore "$ks" --password-file "$PWFILE")
   else
     local key="${!wref:-}"
-    [ -n "$key" ] || fail wallet "The variable $wref is not set in this session." "Export it in the shell that starts Claude Code."
+    [ -n "$key" ] || fail wallet "The variable $wref is not set in this session." "Export it in the shell that runs pod."
     SIGNER=(--private-key "$key")
   fi
 }
@@ -68,7 +77,7 @@ load_signer() {
 address() {
   if [ "$wtype" = "keystore" ]; then
     local ks="$KEYSTORE_DIR/$wref" a
-    [ -f "$ks" ] || fail wallet "There is no keystore called $wref in $KEYSTORE_DIR." "Run list-wallets.sh to see the keystores."
+    [ -f "$ks" ] || fail wallet "There is no keystore called $wref in $KEYSTORE_DIR." "Run pod setup wallets to see the keystores."
     a=$(jq -r '.address // empty' "$ks")   # some keystores store it in clear
     if [ -n "$a" ]; then cast to-check-sum-address "0x${a#0x}"; return; fi
     load_signer                            # otherwise it takes the password to decrypt
@@ -134,6 +143,6 @@ case "$cmd" in
     ;;
 
   *)
-    fail wallet "Unknown command '$cmd'." "Use address, type, sign-message or send."
+    fail_usage wallet "Unknown command '$cmd'." "See pod wallet --help."
     ;;
 esac

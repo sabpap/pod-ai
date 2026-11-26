@@ -4,10 +4,10 @@
 # until it rests in the book, cancels it, and waits until it is cancelled. Saves the result in the
 # profile. The order also expires by itself 5 minutes after its deadline, should the cancel fail.
 #
-# Usage:
-#   test-transaction.sh              show the plan and stop ("needs_approval": true)
-#   test-transaction.sh --yes        send it
-#   test-transaction.sh --dry-run    show the plan and stop (a dry run)
+# Run as: pod setup test [--yes | --dry-run] (the manual is in setup.sh).
+#   pod setup test              show the plan and stop ("needs_approval": true)
+#   pod setup test --yes        send it
+#   pod setup test --dry-run    show the plan and stop (a dry run)
 #
 # Environment: POD_TEST_LAG_S (default 5) seconds between sending and the order's auction round.
 
@@ -19,14 +19,14 @@ for a in "$@"; do
   case "$a" in
     --yes) yes=true ;;
     --dry-run) dry=true ;;
-    *) fail test "Unknown option $a." "Use --yes or --dry-run." ;;
+    *) fail_usage test "Unknown option $a." "Use --yes or --dry-run. See pod setup --help." ;;
   esac
 done
 
 LAG_US=$(( ${POD_TEST_LAG_S:-5} * 1000000 ))
 REST_FOR_US=300000000   # the order's own expiry: 5 minutes after its deadline
 
-profile_exists || fail test "No wallet is connected." "Run /pod:setup first."
+profile_exists || fail test "No wallet is connected." "Connect one with pod setup."
 ADDR=$(profile_get '.wallet.address')
 
 # Record a failed test in the profile, then fail.
@@ -100,7 +100,9 @@ REF=$(to_dec "$ref")
 PRICE=$(bc_int "($REF / 2) / $TICK * $TICK")
 SIZE=$(bc_int "(10^15 + $LOT - 1) / $LOT * $LOT")   # 0.001 of the asset, rounded up to the size step
 
-NONCE=$(printf '%d' "$(rpc_result eth_getTransactionCount "[\"$ADDR\",\"pending\"]" | jq -r '.')")
+NONCE=$(rpc_result eth_getTransactionCount "[\"$ADDR\",\"pending\"]" 2>/dev/null | jq -r '.') \
+  || fail test "Pod did not answer the request for the account's next transaction number." "Try again in a moment."
+NONCE=$(printf '%d' "$NONCE")
 ORDER_ID=$(cast keccak "$(cast abi-encode 'f(address,uint64,uint32)' "$ADDR" "$NONCE" 0)")
 DEADLINE=$(aligned_deadline)
 END=$(( DEADLINE + REST_FOR_US ))
@@ -122,7 +124,7 @@ if $dry; then
 fi
 if ! $yes; then
   jq -n --argjson p "$plan" '{ok: true, needs_approval: true, plan: $p,
-    next: "Ask the user to approve or deny the test transaction. Only on approve, run test-transaction.sh --yes."}'
+    next: "Show the person the plan and ask them to approve or deny the test transaction. Only on approve, run: pod setup test --yes"}'
   exit 0
 fi
 

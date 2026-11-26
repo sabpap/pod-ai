@@ -1,0 +1,147 @@
+#!/usr/bin/env bash
+# The pod command: one entry point for every pod script in libexec/. It routes the command, prints the
+# manual (the "#:" lines at the top of this file and of each command's script), and marks the run as
+# coming through pod, which the scripts require.
+#
+#: pod: read and trade on pod network (staging testnet) from the shell.
+#:
+#: Usage: pod COMMAND [ARGUMENTS] [--help]
+#:
+#: Commands:
+#:   setup      Connect one wallet, prove it can send, show or remove the connection
+#:   status     Can pod act right now, and if not, why not
+#:   settings   Show or change how trades are approved, the market-order band and the resting time
+#:   account    What an account holds, what it is worth and what it has done (any address)
+#:   markets    What is traded, at what price, the order book, price bars and per-round history
+#:   live       Follow prices, the book or an account as they change; stop when a condition holds
+#:   trade      Plan, send and follow orders and stop-loss / take-profit triggers
+#:   wallet     The connected wallet's address and type
+#:   help       This manual, or one command's manual: pod help trade
+#:   --version  The version of pod
+#:
+#: Order of work:
+#:   1. pod status              when the state is unknown. "not set up" means: run pod setup first.
+#:   2. Read: pod account, pod markets, pod live. Reading never sends anything.
+#:   3. Trade in four steps: plan, approve, send, follow.
+#:        pod trade buy NVDA --usd 10 --market   plans only: prints plan_id, summary and preview
+#:        approve                                while the approval setting is "ask", show the person
+#:                                               the summary and preview; send only on their yes
+#:        pod trade send PLAN_ID                 sends exactly that plan; returns when pod accepts it
+#:        pod trade follow PLAN_ID               waits for the auction round and reports the outcome
+#:
+#: Read "pod COMMAND --help" before using a command for the first time. Each manual lists what to run
+#: for each kind of request, every option, and what the output fields mean.
+#:
+#: Output:
+#:   Every command prints one JSON object on stdout; pod live prints one JSON object per line.
+#:   Success has "ok": true. Failure has "ok": false, "step", "error" and usually "fix", a pod command
+#:   to run next. Pass the error and the fix on in plain words. The manuals are plain text.
+#:
+#: Exit codes:
+#:   0    ok
+#:   1    failed: the JSON says why (bad input, refused by pod, pod did not answer)
+#:   2    usage: unknown command or option, or a pod script run without the pod command
+#:   3    not sent: the person answered no at the terminal question
+#:   130  interrupted
+#:
+#: Approval:
+#:   With the approval setting "ask" (the default), a trade is sent only after the person says yes.
+#:   In a terminal, pod trade send asks the question itself. Without a terminal (an agent), the agent
+#:   must ask; in Claude Code the pod plugin's hook makes Claude Code ask the person before any send.
+#:
+#: Files:
+#:   The profile and settings are in ~/.config/pod-plugin (set POD_PLUGIN_HOME to use another folder).
+#:   The profile holds the network, the wallet's type, name and address. Never a key or a password.
+#:
+#: Network: pod staging only (chain id 129302). Play money; nothing here can reach a mainnet.
+#: Needs: cast (Foundry), jq, curl and bc. pod live also needs Node.js 22 or later.
+
+set -euo pipefail
+
+POD_VERSION="1.0.0"
+
+# Find libexec/ next to the real file, also when pod is run through a symlink (cli/install.sh).
+src="${BASH_SOURCE[0]}"
+while [ -L "$src" ]; do
+  dir="$(cd -P "$(dirname "$src")" && pwd)"
+  src="$(readlink "$src")"
+  case "$src" in /*) ;; *) src="$dir/$src" ;; esac
+done
+ROOT="$(cd -P "$(dirname "$src")" && pwd)"
+LIB="$ROOT/libexec"
+
+export POD_CLI=1 POD_CLI_VERSION="$POD_VERSION"
+
+# usage ERROR [FIX]: a usage failure as JSON, exit 2. Written by hand: jq may be the missing tool.
+usage() {
+  local e="${1//\"/\\\"}" f="${2:-pod help}"
+  printf '{"ok": false, "step": "usage", "error": "%s", "fix": "%s"}\n' "$e" "${f//\"/\\\"}"
+  exit 2
+}
+
+# manual FILE: print the "#:" lines of FILE, the manual kept next to the code it describes.
+manual() { sed -n 's/^#: \{0,1\}//p' "$1"; }
+
+# The script that holds each command's manual.
+script_of() {
+  case "$1" in
+    setup) echo setup.sh ;; status) echo status.sh ;; settings) echo profile.sh ;;
+    account) echo account.sh ;; markets) echo markets.sh ;; live) echo live.sh ;;
+    trade) echo trade.sh ;; wallet) echo wallet.sh ;; *) return 1 ;;
+  esac
+}
+
+help_for() {   # help_for [COMMAND]
+  if [ -z "${1:-}" ]; then manual "$ROOT/pod"; return 0; fi
+  local s; s=$(script_of "$1") || usage "No command '$1'." "pod help lists the commands."
+  manual "$LIB/$s"
+}
+
+cmd="${1:-}"
+[ $# -gt 0 ] && shift
+
+case "$cmd" in
+  ""|help|-h|--help) help_for "${1:-}"; exit 0 ;;
+  --version|-V|version) echo "pod $POD_VERSION"; exit 0 ;;
+esac
+
+script_of "$cmd" >/dev/null || usage "Unknown command '$cmd'." "pod help lists the commands."
+
+# --help or -h anywhere after the command prints that command's manual and does nothing else.
+for a in "$@"; do
+  case "$a" in -h|--help) help_for "$cmd"; exit 0 ;; esac
+done
+
+run() { local s="$1"; shift; exec "$LIB/$s" "$@"; }
+
+case "$cmd" in
+  setup)
+    case "${1:-}" in
+      wallets)    shift; run list-wallets.sh "$@" ;;
+      show)       shift; [ $# -eq 0 ] || usage "pod setup show takes no arguments."; run profile.sh show ;;
+      test)       shift; run test-transaction.sh "$@" ;;
+      disconnect) shift; [ $# -eq 0 ] || usage "pod setup disconnect takes no arguments."; run profile.sh delete ;;
+      tools)      shift; run check-tools.sh "$@" ;;
+      network)    shift; run check-network.sh "$@" ;;
+      ""|-*)      run setup.sh "$@" ;;
+      *)          usage "Unknown setup action '$1'." "pod setup --help lists them." ;;
+    esac ;;
+  status)  run status.sh "$@" ;;
+  settings)
+    case "${1:-show}" in
+      show) [ $# -le 1 ] || usage "pod settings show takes no arguments."; run profile.sh settings ;;
+      set)  shift; [ $# -eq 2 ] || usage "Usage: pod settings set KEY VALUE." "pod settings --help lists the settings."
+            run profile.sh set "$@" ;;
+      *)    usage "Unknown settings action '$1'." "Use pod settings, or pod settings set KEY VALUE." ;;
+    esac ;;
+  account) run account.sh "$@" ;;
+  markets) run markets.sh "$@" ;;
+  live)    run live.sh "$@" ;;
+  trade)   run trade.sh "$@" ;;
+  wallet)
+    case "${1:-}" in
+      address|type) run wallet.sh "$@" ;;
+      "") usage "Name a wallet action: address or type." "pod wallet --help" ;;
+      *)  usage "Unknown wallet action '$1'." "pod wallet address or pod wallet type. Trades go through pod trade." ;;
+    esac ;;
+esac
