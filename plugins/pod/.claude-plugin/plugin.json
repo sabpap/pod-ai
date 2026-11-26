@@ -1,0 +1,15 @@
+{
+  "name": "pod",
+  "version": "0.1.0",
+  "description": "Read and trade on pod network (staging) through pod's own API: connect a wallet, check status, see any account, read markets, follow live updates, place and cancel orders.",
+  "author": {
+    "name": "pod-ai"
+  },
+  "keywords": [
+    "pod",
+    "pod network",
+    "trading",
+    "perpetuals",
+    "orderbook"
+  ]
+}

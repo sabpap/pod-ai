@@ -1,0 +1,51 @@
+# pod-ai
+
+AI tools for pod network. This repo is a Claude Code plugin marketplace holding one plugin, `pod`.
+
+- Specs: [specs/](specs/)
+- Plugin: [plugins/pod/](plugins/pod/)
+
+## Install
+
+A person runs these, not the agent: Claude Code's auto mode blocks an agent from installing a plugin itself (seen 2026-11-26).
+
+```
+/plugin marketplace add /Users/sabpap/Workspace/Clients/Laurium/pod-ai
+/plugin install pod@pod-ai
+```
+
+Then **start a new Claude Code session**. Skills load when a session starts, so `/pod:setup` does not appear in the session that installed it.
+
+Then ask the agent to set it up, for example: "Set up the pod plugin with our dev wallet."
+
+## What is built
+
+| Section | Skill | State |
+|---|---|---|
+| 1 Setup | `/pod:setup` | Built. Read-only steps tested; the real test transaction is run by the user |
+| 2 Status | `/pod:status` | Not yet |
+| 3 Account | `/pod:account` | Not yet |
+| 4 Trading | `/pod:trade` | Not yet |
+| 5 Market data | `/pod:markets` | Not yet |
+| 6 Live updates | `/pod:live` | Not yet |
+| 7 Network activity | `/pod:network` | Not yet |
+
+## Tests
+
+| Test | What it checks | Network |
+|---|---|---|
+| `plugins/pod/tests/units.sh` | Pod's number formats: hex and decimal, 10^18 scaling, maths past 64-bit integers | None |
+| `plugins/pod/tests/smoke.sh` | The setup scripts and their error messages, with a throwaway key and profile; that no password file is left behind | Pod staging, read-only |
+| `plugins/pod/scripts/test-transaction.sh --yes` | A real order and cancel with the connected wallet | Pod staging, sends two transactions |
+
+## Secrets
+
+Nothing secret belongs in this repo: no private keys, keystores, seed phrases, passwords or `.env` files.
+
+- [`.gitignore`](.gitignore) keeps out key, wallet, environment and credential files, and the plugin's own profile and temp files.
+- [gitleaks](https://github.com/gitleaks/gitleaks) checks every commit with pod-specific rules in [`.gitleaks.toml`](.gitleaks.toml) (wallet private keys, encrypted keystores, seed phrases) on top of its defaults. Turn the hook on once per clone:
+  ```
+  brew install gitleaks
+  git config core.hooksPath .githooks
+  ```
+- Full scan at any time: `gitleaks dir . --config .gitleaks.toml`.

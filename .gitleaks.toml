@@ -1,0 +1,31 @@
+# gitleaks config: the default rules plus rules for the secrets this project handles (wallet keys).
+# Run by .githooks/pre-commit on every commit. Full scan: gitleaks dir . --config .gitleaks.toml
+
+title = "pod-ai"
+
+[extend]
+useDefault = true
+
+# A raw Ethereum private key (64 hex characters) assigned to a key-like name, e.g.
+# POD_PRIVATE_KEY=0xabc…, "privateKey": "…", --private-key abc…
+# Plain 64-hex values without such a name are transaction hashes and order ids, which are public.
+[[rules]]
+id = "ethereum-private-key-assignment"
+description = "Ethereum private key assigned to a key-like name"
+regex = '''(?i)(private[_-]?key|priv[_-]?key|signing[_-]?key|wallet[_-]?key|secret[_-]?key|pk)["']?\s*[:=]?\s*["']?(0x)?[0-9a-f]{64}\b'''
+keywords = ["private", "priv", "signing", "wallet", "secret", "pk"]
+
+# An encrypted wallet keystore (Foundry, geth). Encrypted, but it must still never be committed:
+# with its password it is the key.
+[[rules]]
+id = "encrypted-wallet-keystore"
+description = "Encrypted Ethereum keystore file"
+regex = '''"ciphertext"\s*:\s*"[0-9a-f]{32,}"'''
+keywords = ["ciphertext"]
+
+# A 12 or 24-word seed phrase assigned to a seed-like name.
+[[rules]]
+id = "wallet-seed-phrase"
+description = "Wallet seed phrase (mnemonic)"
+regex = '''(?i)(mnemonic|seed[_ -]?phrase|recovery[_ -]?phrase)["']?\s*[:=]\s*["']?([a-z]{3,8}\s+){11,23}[a-z]{3,8}'''
+keywords = ["mnemonic", "seed", "recovery"]

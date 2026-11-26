@@ -1,0 +1,57 @@
+# Never commit secrets. gitleaks (.gitleaks.toml, run by .githooks/pre-commit) is the second line.
+
+# Environment files and local settings
+.env
+.env.*
+!.env.example
+*.env
+.envrc
+.claude/settings.local.json
+
+# Private keys, seed phrases, wallet files
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+keystore/
+keystores/
+UTC--*
+*mnemonic*
+*seed-phrase*
+*private-key*
+*privatekey*
+id_rsa*
+id_ecdsa*
+id_ed25519*
+secrets/
+*.secret
+*.secrets
+credentials*.json
+*-credentials.json
+
+# The pod plugin's own state: the profile and the temp files that carry a keystore password
+profile.json
+pod-plugin/
+pod-plugin.*
+pod-plugin-err.*
+
+# Foundry and other tool output, which can hold transaction data and RPC keys
+broadcast/
+cache/
+out/
+
+# Dependencies, caches, logs
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+*.log
+*.tmp
+*.tmp.*
+
+# OS and editor files
+.DS_Store
+.idea/
+.vscode/
