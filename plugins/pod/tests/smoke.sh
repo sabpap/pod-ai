@@ -18,6 +18,13 @@ check() {   # check NAME JQ_EXPR COMMAND...
   else failed=$((failed+1)); echo "FAIL $name: $out"; fi
 }
 
+check_lines() {   # check_lines NAME JQ_EXPR COMMAND...: JQ_EXPR sees the array of every line printed
+  local name="$1" expr="$2"; shift 2
+  local out; out=$("$@" 2>/dev/null)
+  if echo "$out" | jq -e -s "$expr" >/dev/null 2>&1; then pass=$((pass+1)); echo "ok   $name"
+  else failed=$((failed+1)); echo "FAIL $name: $(echo "$out" | head -c 600)"; fi
+}
+
 export SMOKE_KEY="$(cast wallet new --json | jq -r '.data | if type == "array" then .[0] else . end | .private_key')"
 
 check "tools present"             '.ok'                                   "$S/check-tools.sh"
@@ -104,6 +111,36 @@ check "trade: bad number reported" '.ok == false and (.error | test("not a plain
 check "trade: bad time reported"   '.ok == false and (.error | test("not a time"))' "$S/trade.sh" buy nvda 0.01 --price 100 --rests 5y
 check "trade: market value now"    '.preview.value_at_current_price_usd | type == "string"' "$S/trade.sh" buy nvda 0.001 --market
 
+# Markets: read-only, no wallet needed
+check "markets: list"              '.ok and .count > 10 and (.data[0].price | type == "string") and .more == false' "$S/markets.sh"
+check "markets: search"            '.count >= 1 and all(.data[]; .market | test("NVDA"))' "$S/markets.sh" list nvda
+check "markets: movers"            '.data | has("rising") and has("falling") and has("most_traded")' "$S/markets.sh" movers
+check "markets: perp leads with mark" '.data.price_kind == "mark" and (.data.summary | startswith("NVDA perp $")) and (.computed | index("book.spread"))' "$S/markets.sh" market nvda
+check "markets: spot leads with last" '.data.price_kind == "last traded" and .data.type == "spot"' "$S/markets.sh" market "nvda spot"
+check "markets: book levels"       '(.data.bids | length) <= 3 and (.data.asks | length) <= 3 and .data.buy_levels >= 0' "$S/markets.sh" book nvda --depth 3
+check "markets: cost of a size"    '(.data.estimate | length) == 2 and (.data.estimate_note | test("one price"))' "$S/markets.sh" book nvda --size 1
+check "markets: bars and summary"  '.count == 3 and .data.summary.bars == 3 and .resolution == "1d"' "$S/markets.sh" bars nvda --resolution 1d --limit 3
+check "markets: rounds by the half second" '.count == 6 and (.data | map(.time) | unique | length) == 6' "$S/markets.sh" rounds nvda --limit 6
+check "markets: unknown market"    '.ok == false and (.error | test("No market"))' "$S/markets.sh" market nosuchthing
+check "markets: never traded"      '.ok and .data.summary == "TEST spot: no price yet · no two-sided book · status disabled"' "$S/markets.sh" market "TEST spot"
+check "markets: no book yet"       '.ok == false and (.error | test("never traded"))' "$S/markets.sh" book "TEST spot"
+check "markets: bad bar size"      '.ok == false' "$S/markets.sh" bars nvda --resolution 2h
+
+# Live: short listeners against staging. Needs Node.js 22 or later; skipped otherwise.
+if [ "$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)" -ge 22 ] 2>/dev/null; then
+  check_lines "live: market, then time up" '.[0].event == "watching" and .[-1].event == "stopped" and any(.[]; .market == "NVDA perp" and .price_kind == "mark")' "$S/live.sh" market nvda --for 3s --every 1s
+  check_lines "live: condition met"      '.[-1].event == "condition met" and .[-1].condition == "mark_price > 0"' "$S/live.sh" market nvda --until "mark > 0" --for 20s
+  check_lines "live: each round once"    '[.[] | select(.market) | [.market, .time]] | length > 2 and length == (unique | length)' "$S/live.sh" market nvda gold --every 0 --for 3s
+  check_lines "live: raw, every market"  '[.[] | select(.raw) | .raw.orderbook_id] | unique | length == 2' "$S/live.sh" market nvda gold --raw --every 1s --for 3s
+  check "live: --for at most 30 days"    '.ok == false' "$S/live.sh" market nvda --for 31d
+  check_lines "live: positions snapshot" '.[1].account_value_usd | type == "string"' "$S/live.sh" positions "$DEV" --for 2s
+  check_lines "live: rounds counted"     'any(.[]; (.round | type) == "number" and .rounds_since_last_line >= 1)' "$S/live.sh" rounds --every 1s --for 3s
+  check "live: unknown field refused"    '.ok == false and (.error | test("no field"))' "$S/live.sh" market nvda --until "colour = red"
+  check "live: one account per channel"  '.ok == false' "$S/live.sh" positions "$DEV" 0x752f038fa0aa50397deda3a7a56d6bc13a743c17
+  check "live: nothing left running"     '.count == 0' "$S/live.sh" list
+else
+  echo "skip live checks (Node.js 22 or later is not installed)"
+fi
 
 check "disconnect"                '.disconnected'                         "$S/profile.sh" delete
 check "trade: no wallet"          '.ok == false and (.fix | test("setup"))' "$S/trade.sh" buy nvda 1 --price 1
@@ -111,6 +148,7 @@ check "status: not set up"        '.level == "not set up" and .wallet == null an
 check "settings: need a wallet"   '.ok == false' "$S/profile.sh" set approval auto
 check "account: no wallet, no address" '.ok == false and (.fix | test("setup"))' "$S/account.sh"
 check "send refused when not set up" '.ok == false'                       "$S/wallet.sh" send 0x0 "f()"
+check "live: no wallet, no address" '.ok == false and (.fix | test("setup"))' "$S/live.sh" positions
 
 # No password file may be left behind. Needs a keystore with a Keychain password; skipped otherwise.
 ks=$("$S/list-wallets.sh" | jq -r '[.keystores[] | select(.keychain_password)][0].name // empty')

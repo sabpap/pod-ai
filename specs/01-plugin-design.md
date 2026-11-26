@@ -121,7 +121,7 @@ Every trading action pod allows for the connected account. All are signed transa
 
 ## Section 5. Market data
 
-What is traded and at what price. No key needed.
+What is traded and at what price. No key needed. Specified and built: [06-market-data.md](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/specs/06-market-data.md).
 
 | Goal | Call | Interface |
 |---|---|---|
@@ -134,7 +134,7 @@ What is traded and at what price. No key needed.
 
 ## Section 6. Live updates
 
-Follow markets and accounts as they change. Account channels default to the connected account and accept any address.
+Follow markets and accounts as they change. Account channels default to the connected account and accept any address. Specified and built: [07-live.md](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/specs/07-live.md).
 
 | What to follow | Channel |
 |---|---|
@@ -150,7 +150,7 @@ Follow markets and accounts as they change. Account channels default to the conn
 
 The skill explains subscribing (`eth_subscribe`), catching up without gaps (read REST first, then subscribe with `since = solution_now`), the 2.3-hour replay limit, and resuming when the server closes a stream.
 
-**The plugin ships the manual only, no listener.** A single AI call cannot keep a WebSocket open. The skill says so, and says that a harness wanting continuous updates needs its own long-running listener that follows these instructions.
+**The plugin ships a listener** (decided 2026-11-26, replacing "manual only"): Claude Code runs it as a background process that wakes the agent on its output, with simple conditions such as "mark < 140". The skill still documents the protocol for harnesses that want their own listener.
 
 ## Section 7. Network activity
 
@@ -198,7 +198,7 @@ Hypothetical requests, to check the design covers them. Each row says what the p
 | "How many transactions on the network in the last second?" | Network section: read the last two rounds with `eth_getBlockByNumber` and count their transactions | Nothing |
 | "How is market Z going?" | Market data: 24-hour change, high, low, volume, funding, open interest, recent price bars, order book spread | The judgement of what "going well" means |
 | "What's the current price?" | Market data: last traded price, mark price and oracle price, and what each one means | Which one to quote |
-| "Watch Y for the next 2 hours and if this happens, do that" | The live channels for Y, the REST calls to poll instead, and the trading actions. For a stop-loss or take-profit on a position, a pod trigger does the watching on pod itself, with no listener | Staying alive for 2 hours: a listener or a repeating check in the harness, and the condition logic |
+| "Watch Y for the next 2 hours and if this happens, do that" | A listener on Y with `--for 2h --until "<condition>"`, run in the background, which wakes the agent when the condition holds; then the trading actions. For a stop-loss or take-profit on a position, a pod trigger does the watching on pod itself, with no listener | Deciding the condition, and the session staying open for 2 hours |
 | "Read the news and trade on your own" | Everything after the decision: find the market, check buying power, place orders, confirm the outcome, follow the position | Reading the news (pod's API has none), deciding what to trade, and the autonomy to act |
 | `/pod:reference` | shared | Loaded by the others |
 
@@ -209,4 +209,4 @@ Hypothetical requests, to check the design covers them. Each row says what the p
 | D1 | How does the plugin prove the wallet can really transact? | Every status check signs a free test message. Setup sends one real test transaction (tiny maker-only order, cancelled at once); status reports its saved result |
 | D2 | Transfers between pod accounts? | Out for now |
 | D3 | How many wallets? | One profile at a time; disconnect to change |
-| D4 | Live updates without a long-running process? | Manual only; the skill tells the harness it needs its own listener for continuous updates |
+| D4 | Live updates without a long-running process? | ~~Manual only~~. Revised 2026-11-26: the plugin ships a listener that the harness runs in the background, with simple conditions; the protocol stays documented for other harnesses ([07-live.md](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/specs/07-live.md) L1) |

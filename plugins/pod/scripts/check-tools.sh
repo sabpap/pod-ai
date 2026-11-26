@@ -13,8 +13,15 @@ done
 has_security=false
 command -v security >/dev/null 2>&1 && has_security=true
 
+# Node.js 22 or later is only needed for live updates (live.sh); everything else works without it.
+live_updates=false
+major=$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)
+[ "$major" -ge 22 ] 2>/dev/null && live_updates=true
+
 if [ -z "$missing" ]; then
-  echo "{\"ok\": true, \"tools\": [\"cast\", \"jq\", \"curl\", \"bc\"], \"keychain\": $has_security}"
+  note=""
+  $live_updates || note=", \"note\": \"Live updates need Node.js 22 or later: brew install node. Everything else works without it.\""
+  echo "{\"ok\": true, \"tools\": [\"cast\", \"jq\", \"curl\", \"bc\"], \"keychain\": $has_security, \"live_updates\": $live_updates$note}"
   exit 0
 fi
 

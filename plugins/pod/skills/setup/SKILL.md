@@ -32,7 +32,7 @@ Never ask for, read, print or store a password or a private key. If a keystore h
    "${CLAUDE_PLUGIN_ROOT}/scripts/setup.sh" --keystore NAME
    "${CLAUDE_PLUGIN_ROOT}/scripts/setup.sh" --env POD_PRIVATE_KEY
    ```
-   It checks the tools (`cast`, `jq`, `curl`, `bc`), checks pod answers and is open for writes, reads the address, signs a test message and verifies it, reads the account, and saves the profile.
+   It checks the tools (`cast`, `jq`, `curl`, `bc`; Node.js 22 or later is needed only for live updates, and `live_updates` in the tools check says whether it is there), checks pod answers and is open for writes, reads the address, signs a test message and verifies it, reads the account, and saves the profile.
 
 3. **Read the answer's `level`**:
 

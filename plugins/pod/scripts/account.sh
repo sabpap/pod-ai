@@ -67,17 +67,7 @@ trap 'rm -rf "$T"' EXIT
 echo '[]' > "$T/items"; echo '[]' > "$T/pages"
 more=false
 
-fetch() {   # fetch PATH FILE: GET a REST route into FILE, tried twice. Fails loudly, never into FILE.
-  local code why route="${1%%\?*}"
-  code=$(curl -sS --max-time 20 --retry 1 --retry-delay 1 -o "$2" -w '%{http_code}' "$POD_REST$1" 2>/dev/null) || code=000
-  [ "$code" = 200 ] && return 0
-  if [ "$code" = 000 ]; then
-    fail account "Pod did not answer $route in time." "Try again in a moment, or ask for fewer entries with --limit or --since."
-  fi
-  # Pod explains errors in a short plain-text body, e.g. 503 "clob indexer unavailable".
-  why=$(head -c 200 "$2" 2>/dev/null | tr -d '\n' || true)
-  fail account "Pod answered $route with an error ($code${why:+: $why})." "This is on pod's side. Try again in a moment."
-}
+fetch() { fetch_to account "$1" "$2"; }   # fetch PATH FILE (lib.sh)
 
 keep_page() {   # keep_page FILE ITEMS_JQ: append a response to the raw pages and its items to the list
   jq -s '.[0] + [.[1]]' "$T/pages" "$1" > "$T/p.new" && mv "$T/p.new" "$T/pages"
@@ -255,7 +245,8 @@ case "$view" in
   triggers)
     jq -L "$HERE" --slurpfile m "$T/markets" "$JQ_DEFS"'[.[] |
       {market: (.orderbook_id | mname), type: .trigger_type,
-       side: (if (.size | tostring | startswith("-")) then "sell" else "buy" end),
+       side: (if (.size | int_str) == "0" then "closes the position"
+              elif (.size | tostring | startswith("-")) then "sell" else "buy" end),
        size: (if (.size | int_str) == "0" then "whole position" else (.size | amount | abs_str) end),
        trigger_price: (.trigger_price | amount), limit_price: (.limit_price | price_or_null),
        grouping, flags: flags, deadline: (.deadline | us_time), ends: (.end | us_time), order_id, tx_hash} | nonull]' "$T/items" > "$T/data" ;;

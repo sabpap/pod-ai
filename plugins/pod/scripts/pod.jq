@@ -86,3 +86,14 @@ def find_market($q; $spot):
   | (if $want_spot then map(select(.market_type == "spot"))
      else map(select(.market_type == "perp")) + map(select(.market_type == "spot")) end)
   | .[0] // null;
+
+# Like us_time, with milliseconds when the time is not on a whole second. Auction rounds are half a
+# second apart, so their times need it: 1795710282500000 -> "2026-11-26T16:24:42.500Z".
+def us_time_ms:
+  if . == null then null else
+    int_str | if (length > 17) then null else
+      tonumber as $u | ($u % 1000000 / 1000 | floor) as $ms
+      | (($u / 1000000) | floor | todate) as $s
+      | if $ms == 0 then $s else ($s | sub("Z$"; ".\("00\($ms)" | .[-3:])Z")) end
+    end
+  end;

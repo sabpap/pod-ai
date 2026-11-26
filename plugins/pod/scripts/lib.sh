@@ -51,6 +51,20 @@ rest() {
   curl -sS --fail --max-time 15 "$POD_REST$1"
 }
 
+# fetch_to STEP PATH FILE: GET a REST route into FILE, tried twice. On failure it stops the script
+# with pod's own reason (e.g. 503 "clob indexer unavailable"), and never writes the error into FILE
+# as if it were data.
+fetch_to() {
+  local step="$1" path="$2" file="$3" code why route="${2%%\?*}"
+  code=$(curl -sS --max-time 20 --retry 1 --retry-delay 1 -o "$file" -w '%{http_code}' "$POD_REST$path" 2>/dev/null) || code=000
+  [ "$code" = 200 ] && return 0
+  if [ "$code" = 000 ]; then
+    fail "$step" "Pod did not answer $route in time." "Try again in a moment, or ask for fewer entries with --limit or --since."
+  fi
+  why=$(head -c 200 "$file" 2>/dev/null | tr -d '\n' || true)
+  fail "$step" "Pod answered $route with an error ($code${why:+: $why})." "This is on pod's side. Try again in a moment."
+}
+
 # rpc METHOD PARAMS_JSON: call JSON-RPC and print the whole response object.
 rpc() {
   curl -sS --fail --max-time 15 -X POST "$POD_RPC" -H 'content-type: application/json' \

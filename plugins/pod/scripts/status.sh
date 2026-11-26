@@ -187,6 +187,12 @@ case "$level" in
     summary_line="pod: $level · $(short_addr "$ADDR") · value \$$(money "$(echo "$account" | jq -r '.account_value_usd')") · $npos position$([ "$npos" = 1 ] || echo s) · $nord order$([ "$nord" = 1 ] || echo s)" ;;
 esac
 
+# Live updates run in live.sh, which needs Node.js 22 or later for its built-in WebSocket.
+live_can=$net_up; live_why=""
+node_major=$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)
+if ! [ "$node_major" -ge 22 ] 2>/dev/null; then live_can=false; live_why="needs Node.js 22 or later (brew install node)"
+elif ! $net_up; then live_why="pod does not answer"; fi
+
 SETTINGS=$(settings_json)
 if [ "$level" != "not set up" ]; then
   summary_line="$summary_line · $(echo "$SETTINGS" | jq -r 'if .approval == "ask" then "asks before trading" else "trades without asking" end')"
@@ -195,14 +201,16 @@ fi
 jq -n --arg level "$level" --arg mode "$mode" --arg line "$summary_line" --argjson settings "$SETTINGS" \
   --argjson net_up "$net_up" --argjson writes "$writes_open" --argjson wallet "$wallet" \
   --argjson account "$account" --argjson proof "$proof" --argjson can_trade "$can_trade" --arg trade_why "$trade_why" \
-  --argjson problems "$problems" --argjson warnings "$warnings" --arg name "$STAGING_NAME" --argjson chain "$STAGING_CHAIN_ID" '
+  --argjson problems "$problems" --argjson warnings "$warnings" --arg name "$STAGING_NAME" --argjson chain "$STAGING_CHAIN_ID" \
+  --argjson live_can "$live_can" --arg live_why "$live_why" '
   {ok: true, level: $level, summary: $line, check: $mode,
    network: {name: $name, chain_id: $chain, answers: $net_up, writes_open: $writes},
    wallet: $wallet, account: $account, proof: $proof, settings: $settings,
    capabilities: [
      {name: "read markets and prices", can: $net_up},
      {name: "read any account", can: $net_up},
-     {name: "follow live updates", can: $net_up, note: "needs a listener kept open by the harness"},
+     ({name: "follow live updates", can: $live_can, note: "a listener runs as a background process of the session"}
+      + (if $live_why == "" then {} else {why: $live_why} end)),
      ({name: "trade with this wallet", can: $can_trade} + (if $trade_why == "" then {} else {why: $trade_why} end)),
      {name: "deposit, withdraw, transfer", can: false, why: "not part of this plugin"},
      {name: "bot keys (delegation)", can: false, why: "not part of this plugin"},
