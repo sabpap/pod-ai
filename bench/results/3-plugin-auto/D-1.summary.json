@@ -1,0 +1,18 @@
+{
+  "branch": "3-plugin-auto",
+  "case": "D",
+  "run": 1,
+  "finished": true,
+  "turns": 25,
+  "tool_calls": 23,
+  "tools": {
+    "Bash": 15,
+    "Read": 7,
+    "Skill": 1
+  },
+  "seconds": 67,
+  "cost_usd": 0.366497,
+  "permission_denials": 0,
+  "send_attempts": 6,
+  "answer": "All five sent. Here's how they landed:\n\n| Market | Size | Fill price | ~Value | Status |\n|---|---|---|---|---|\n| **NVDA** perp | 0.019761 | $152.26 | ~$3.01 | Filled |\n| **AAPL** perp | 0.008417 | $357.22 | ~$3.01 | Filled |\n| **SPY** perp | 0.004151 | $723.68 | ~$3.00 | Filled |\n| **GLD** perp | 0.000841 | $3,573.83 | ~$3.01 | Filled |\n| **SenseTime** perp | 23.081229 | — | — | Not filled (nothing available at that price before expiry) |\n\nFour out of five filled at about $3 each. SenseTime expired without a fill — the book may have been too thin or the price moved outside the band. Want me to retry SenseTime, perhaps with a wider band?"
+}

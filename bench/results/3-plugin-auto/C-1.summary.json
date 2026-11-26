@@ -1,0 +1,18 @@
+{
+  "branch": "3-plugin-auto",
+  "case": "C",
+  "run": 1,
+  "finished": true,
+  "turns": 2,
+  "tool_calls": 6,
+  "tools": {
+    "Bash": 3,
+    "Read": 2,
+    "Skill": 1
+  },
+  "seconds": 25,
+  "cost_usd": 0.1961765,
+  "permission_denials": 0,
+  "send_attempts": 1,
+  "answer": "**Filled:** bought 0.065866 NVDA perp at $152.07, fee $0.0045. About $10.02 in value."
+}

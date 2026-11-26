@@ -1,0 +1,18 @@
+{
+  "branch": "4-cli-auto",
+  "case": "D",
+  "run": 1,
+  "finished": true,
+  "turns": 2,
+  "tool_calls": 28,
+  "tools": {
+    "Bash": 22,
+    "Read": 5,
+    "Skill": 1
+  },
+  "seconds": 67,
+  "cost_usd": 0.453989,
+  "permission_denials": 0,
+  "send_attempts": 5,
+  "answer": "SenseTime didn't fill — nothing was available at the price or better before the order expired. The book may be thin on the ask side at $0.13.\n\nThe other four are all filled and open:\n\n| Market | Size | Avg Price | ~Value |\n|---|---|---|---|\n| **NVDA** perp | 0.019743 | $152.44 | $3.01 |\n| **AAPL** perp | 0.008435 | $357.22 | $3.01 |\n| **SPY** perp | 0.004151 | $723.70 | $3.00 |\n| **GLD** perp | 0.00084 | $3,574.45 | $3.00 |\n| **SenseTime** perp | — | not filled | — |\n\nWant me to retry SenseTime with a wider band (e.g. `--band 5`) to reach deeper into the book?"
+}

@@ -1,0 +1,21 @@
+{
+  "branch": "4-cli-auto",
+  "case": "G",
+  "run": 2,
+  "finished": true,
+  "turns": 7,
+  "tool_calls": 28,
+  "tools": {
+    "Bash": 17,
+    "Monitor": 1,
+    "Read": 3,
+    "Skill": 1,
+    "ToolSearch": 2,
+    "WebSearch": 4
+  },
+  "seconds": 728,
+  "cost_usd": 1.2133018000000002,
+  "permission_denials": 0,
+  "send_attempts": 4,
+  "answer": "Position closed. Here's the final result:\n\n---\n\n## Trade Result: NVDA Perp\n\n| | |\n|---|---|\n| **Entry** | $152.34 (buy 0.065723) |\n| **Exit** | $151.53 (sell 0.065723) |\n| **Price move** | −$0.81 (−0.53%) |\n| **Gross P&L** | −$0.0532 |\n| **Fees** | $0.0090 (entry + exit) |\n| **Net P&L** | **−$0.0622** |\n| **Return on position** | **−0.62%** |\n| **Duration** | ~10 minutes |\n| **Stop-loss** | $147.50 (never triggered, auto-removed on close) |\n\nThe position drifted slightly against us during the 10 minutes — NVDA softened from $152.34 to $151.53. A small loss on a small position. The earnings catalyst was strong but the after-hours session was quiet, so there wasn't enough momentum to push it higher in the short window. The stop-loss was never in danger of triggering (price stayed well above $147.50)."
+}

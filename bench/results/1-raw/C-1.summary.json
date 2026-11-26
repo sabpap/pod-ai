@@ -1,0 +1,19 @@
+{
+  "branch": "1-raw",
+  "case": "C",
+  "run": 1,
+  "finished": true,
+  "turns": 19,
+  "tool_calls": 20,
+  "tools": {
+    "Agent": 3,
+    "Bash": 13,
+    "Skill": 1,
+    "WebFetch": 3
+  },
+  "seconds": 188,
+  "cost_usd": 0.639362725,
+  "permission_denials": 0,
+  "send_attempts": 1,
+  "answer": "Order filled. You're now **long 0.065763 NVDA** on the perp market:\n\n| | |\n|---|---|\n| **Entry price** | $152.04 |\n| **Size** | 0.065763 NVDA |\n| **Cost basis** | $9.9986 |\n| **Fee** | $0.0045 (taker) |\n| **Direction** | Open long |\n| **Tx** | `0x1e468dfa…76f9b6` |\n\nThe order was IOC/market and filled in a single batch at $152.04."
+}

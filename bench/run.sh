@@ -7,6 +7,8 @@
 #   bench/run.sh summary        one table of every run recorded so far
 #
 # BRANCH is 1-raw, 2-manual, 3-plugin, 4-cli, or 4-cli-noskill (the pod command with no skill, case I).
+# 3-plugin-auto and 4-cli-auto are the same branches, recorded apart, for runs made with the approval
+# setting switched to "auto" (bench/run-all.sh BRANCH auto does the switch).
 # Each branch is a git worktree in $POD_BENCH_WORKTREES (default: ../pod-ai-variants next to this repo).
 # Each branch uses its own wallet, a Foundry keystore called pod-BRANCH, and its own state folder.
 #
@@ -40,7 +42,7 @@ row=$(awk -F'\t' -v id="$case_id" '$1 == id' "$HERE/cases.tsv")
 mode=$(echo "$row" | cut -f2); timeout_s=$(echo "$row" | cut -f4); prompt=$(echo "$row" | cut -f5)
 [ "$mode" = auto ] || { echo "Case $case_id is run by hand: $prompt" >&2; exit 2; }
 
-real="${branch%-noskill}"
+real="${branch%-noskill}"; real="${real%-auto}"
 prompt="${prompt//\{wallet\}/pod-$real}"
 dir="$WT/$real"
 [ -d "$dir" ] || { echo "No worktree at $dir. Create it: git worktree add $dir $real" >&2; exit 2; }
@@ -57,8 +59,8 @@ args=(-p "$prompt" --model "$MODEL" --output-format stream-json --verbose
 work="$dir"
 case "$branch" in
   1-raw|2-manual) ;;                                   # the skill loads from the worktree's .claude/skills
-  3-plugin) args+=(--plugin-dir "$dir/plugins/pod") ;;
-  4-cli)    args+=(--plugin-dir "$dir/plugins/pod"); export PATH="$dir/cli:$PATH" ;;
+  3-plugin|3-plugin-auto) args+=(--plugin-dir "$dir/plugins/pod") ;;
+  4-cli|4-cli-auto) args+=(--plugin-dir "$dir/plugins/pod"); export PATH="$dir/cli:$PATH" ;;
   4-cli-noskill)                                       # the command alone, from an empty folder
     export PATH="$dir/cli:$PATH"; work=$(mktemp -d); args+=(--disallowedTools "Skill") ;;
   *) echo "Unknown branch $branch" >&2; exit 2 ;;
@@ -85,7 +87,7 @@ jq -s --arg b "$branch" --arg c "$case_id" --arg r "$run" --argjson s "$secs" '
       cost_usd: ($res.total_cost_usd // null),
       permission_denials: ($res.permission_denials // [] | length),
       send_attempts: ([$calls[] | select(.name == "Bash") | .input.command // ""
-                       | select(test("trade(\\.sh)? +send|--send|eth_sendRawTransaction|cast +(send|publish)|pod-send\\.sh(?!.*(--dry-run|--check))"))] | length),
+                       | select(test("trade(\\.sh)? +send|--send|eth_sendRawTransaction|cast +(send|publish)|pod-send\\.sh(?!.*(--dry-run|--check|--help))"))] | length),
       answer: ($res.result // null) }' "$log" > "$OUT/$branch/$case_id-$run.summary.json"
 
 jq '{branch, case, run, finished, turns, tool_calls, seconds, cost_usd, permission_denials, send_attempts}' "$OUT/$branch/$case_id-$run.summary.json"

@@ -1,0 +1,18 @@
+{
+  "branch": "2-manual",
+  "case": "D",
+  "run": 2,
+  "finished": true,
+  "turns": 18,
+  "tool_calls": 16,
+  "tools": {
+    "Bash": 12,
+    "Read": 3,
+    "Skill": 1
+  },
+  "seconds": 137,
+  "cost_usd": 0.697254,
+  "permission_denials": 1,
+  "send_attempts": 0,
+  "answer": "All five computed. Here's the plan — these are all **market buy** orders on pod staging (play money, all oracle sources marked internal/stale except GLD):\n\n| Market | Size (units) | Worst price (+2%) | ~Value at mark | ~Margin (5%) |\n|---|---|---|---|---|\n| **NVDA** | 0.065984 | $154.58 | $10.00 | $0.50 |\n| **AAPL** | 0.028123 | $362.68 | $10.00 | $0.50 |\n| **SPY** | 0.013841 | $736.90 | $10.00 | $0.50 |\n| **GLD** | 0.002804 | $3,637.52 | $10.00 | $0.50 |\n| **SenseTime** | 76.939777 | $0.13 | $10.00 | $0.50 |\n\n**Total**: ~$50 notional, ~$2.50 margin from your $20 cash. Each is a market order (type 1, IOC flag 2) that fills at the round's clearing price — the worst price is just the ceiling. Taker fee is 0.045% per trade (~$0.02 each).\n\nShall I send all five?"
+}

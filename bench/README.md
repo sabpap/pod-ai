@@ -21,7 +21,14 @@ bench/run.sh 4-cli-noskill I  # the pod command with no skill
 bench/run.sh summary          # one table of every run so far
 ```
 
-Run case A first on each branch: it connects the wallet, which the later cases need on `3-plugin` and `4-cli`. Run each case three times per branch; one run of a model proves little. Do not run two cases on the same branch at once: they share a wallet.
+The whole benchmark for one branch, three runs per case, with the wallet reset between runs:
+
+```
+bench/run-all.sh 4-cli        # every automatic case
+bench/run-all.sh 4-cli auto   # 3-plugin and 4-cli only: the trade cases again with approval off
+```
+
+Run the branches side by side, one process each. To run single cases instead: run case A first on each branch: it connects the wallet, which the later cases need on `3-plugin` and `4-cli`. Then run each case three times per branch; one run of a model proves little. Do not run two cases on the same branch at once: they share a wallet.
 
 ## What a session gets
 

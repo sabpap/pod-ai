@@ -1,0 +1,19 @@
+{
+  "branch": "4-cli",
+  "case": "G",
+  "run": 3,
+  "finished": true,
+  "turns": 15,
+  "tool_calls": 13,
+  "tools": {
+    "Bash": 7,
+    "Skill": 1,
+    "ToolSearch": 1,
+    "WebSearch": 4
+  },
+  "seconds": 62,
+  "cost_usd": 0.5469229,
+  "permission_denials": 1,
+  "send_attempts": 1,
+  "answer": "The approval hook is asking you to confirm the trade. Once you approve, I'll send it and immediately set a stop-loss at ~$147.30 (about 3% below entry), then start watching it for 10 minutes."
+}

@@ -1,0 +1,20 @@
+{
+  "branch": "1-raw",
+  "case": "D",
+  "run": 3,
+  "finished": true,
+  "turns": 17,
+  "tool_calls": 18,
+  "tools": {
+    "Agent": 2,
+    "Bash": 11,
+    "Glob": 1,
+    "Skill": 1,
+    "WebFetch": 3
+  },
+  "seconds": 182,
+  "cost_usd": 0.5855396949999999,
+  "permission_denials": 0,
+  "send_attempts": 1,
+  "answer": "All five limit buy orders placed successfully. Here's the summary:\n\n| Market | Side | Size | Price | Notional | Tx |\n|--------|------|------|-------|----------|-----|\n| NVDA/USD | buy | 0.033 | $151.99 | ~$5.02 | `0x4d29…a54a` |\n| AAPL/USD | buy | 0.014 | $355.61 | ~$4.98 | `0x03e0…2cc2` |\n| SPY/USD | buy | 0.007 | $722.76 | ~$5.06 | `0x2860…6a8c` |\n| GLD/USD | buy | 0.0014 | $3,566.44 | ~$4.99 | `0x2d31…2671` |\n| SenseTime/USD | buy | 38.0 | $0.13 | ~$4.94 | `0x8941…6a88` |\n\nThese are **limit orders** (1-hour TTL) resting at the current mark price, since the order books were empty — no immediate counterparty to fill against. They'll fill if someone places a matching sell within the hour. Total margin used is about $1.25 of your $17.57 balance."
+}

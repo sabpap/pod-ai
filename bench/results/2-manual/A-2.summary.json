@@ -1,0 +1,18 @@
+{
+  "branch": "2-manual",
+  "case": "A",
+  "run": 2,
+  "finished": true,
+  "turns": 8,
+  "tool_calls": 6,
+  "tools": {
+    "Bash": 4,
+    "Read": 1,
+    "Skill": 1
+  },
+  "seconds": 25,
+  "cost_usd": 0.2525285,
+  "permission_denials": 0,
+  "send_attempts": 0,
+  "answer": "Everything is set up and ready to go. Here's the summary:\n\n**Wallet** — Foundry keystore `pod-2-manual` is configured and opens via macOS Keychain.\n- Address: `0x6273a78912005AD6C3c4C1C3154ebAcbFd590d67`\n\n**Network** — Pod staging is online, not paused, and accepting writes.\n\n**Balance** — The account holds **$20.00** in cash.\n\nYes, we can trade. The account has cash, the wallet signs, and the network is open. What would you like to do?"
+}

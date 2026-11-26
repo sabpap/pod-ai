@@ -1,0 +1,19 @@
+{
+  "branch": "4-cli",
+  "case": "G",
+  "run": 1,
+  "finished": true,
+  "turns": 13,
+  "tool_calls": 11,
+  "tools": {
+    "Bash": 6,
+    "Skill": 1,
+    "ToolSearch": 1,
+    "WebSearch": 3
+  },
+  "seconds": 67,
+  "cost_usd": 0.5516154,
+  "permission_denials": 0,
+  "send_attempts": 0,
+  "answer": "**Buy 0.066 NVDA perp at market (~$10 at the current $151.58, worst case $154.61).** Fee ~$0.005, margin $0.51, leaves $19.49 free. Approve?"
+}

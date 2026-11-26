@@ -1,0 +1,17 @@
+{
+  "branch": "4-cli",
+  "case": "D",
+  "run": 2,
+  "finished": true,
+  "turns": 20,
+  "tool_calls": 18,
+  "tools": {
+    "Bash": 17,
+    "Skill": 1
+  },
+  "seconds": 63,
+  "cost_usd": 0.3834145,
+  "permission_denials": 5,
+  "send_attempts": 5,
+  "answer": "All five were denied — nothing was sent. The approval hook showed each trade for confirmation but none were approved."
+}

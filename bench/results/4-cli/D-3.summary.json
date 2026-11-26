@@ -1,0 +1,17 @@
+{
+  "branch": "4-cli",
+  "case": "D",
+  "run": 3,
+  "finished": true,
+  "turns": 20,
+  "tool_calls": 18,
+  "tools": {
+    "Bash": 17,
+    "Skill": 1
+  },
+  "seconds": 62,
+  "cost_usd": 0.32195399999999996,
+  "permission_denials": 5,
+  "send_attempts": 5,
+  "answer": "All five sends were denied — nothing was sent. No trades went through."
+}

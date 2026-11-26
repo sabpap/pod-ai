@@ -1,0 +1,17 @@
+{
+  "branch": "4-cli",
+  "case": "B",
+  "run": 1,
+  "finished": true,
+  "turns": 6,
+  "tool_calls": 4,
+  "tools": {
+    "Bash": 3,
+    "Skill": 1
+  },
+  "seconds": 28,
+  "cost_usd": 0.25585250000000004,
+  "permission_denials": 0,
+  "send_attempts": 0,
+  "answer": "Here's the summary:\n\n## Account\n\n| | |\n|---|---|\n| **Wallet** | `0x90ae…51f3` |\n| **Account value** | **$20.00** |\n| **Cash** | $20.00 |\n| **Unrealized P&L** | $0.00 |\n| **Open positions** | 0 |\n| **Open orders** | 0 |\n\nSettings: asks before every trade, market orders within 2% of the price, limit orders rest 1 day.\n\n## Markets (60 total)\n\n**Perpetuals (54)** — all USD-quoted, 0.01% funding rate:\n\n| Region | Markets |\n|---|---|\n| **US equities** | NVDA ($151.77), AAPL ($355.52), GOOGL ($275.67), AMZN ($247.44), META ($614.22) |\n| **US indices / macro** | SPY ($722.38), QQQ ($638.68), GLD ($3,566.14) |\n| **Private / pre-IPO** | SPCX / SpaceX ($129.64), OPENAI ($1,308.66), ANT / Anthropic ($84.26, +20.8% today) |\n| **Japan** | Sony, Toyota, SoftBank, Tokyo Electron, Keyence, Shin-Etsu, Advantest, Fanuc, Disco, Yaskawa, Nidec, Murata, SMC, Harmonic Drive |\n| **Korea** | Samsung, SK Hynix, Hyundai Motor, Hanmi Semi, Naver, Rainbow Robotics, Robotis, SPG |\n| **Hong Kong / China** | Tencent (0700), Xiaomi (1810), Alibaba (9988), Baidu (9888), BYD, SMIC, Kuaishou, Hua Hong, Biren, Zhipu AI, MiniMax, SenseTime |\n| **China A-shares** | NAURA, Hygon, Inovance, Tuopu, JCET, Leader Drive, Sanhua, Empyrean |\n\n**Spot (6):** NVDAx, AAPLx, GOOGLx, QQQx, SPYx, GLDx — all zero volume currently.\n\nNotable mover today: **ANT (Anthropic) +20.8%** to $84.26."
+}

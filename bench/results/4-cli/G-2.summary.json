@@ -1,0 +1,19 @@
+{
+  "branch": "4-cli",
+  "case": "G",
+  "run": 2,
+  "finished": true,
+  "turns": 19,
+  "tool_calls": 17,
+  "tools": {
+    "Bash": 12,
+    "Skill": 1,
+    "ToolSearch": 1,
+    "WebSearch": 3
+  },
+  "seconds": 141,
+  "cost_usd": 0.7288368,
+  "permission_denials": 2,
+  "send_attempts": 2,
+  "answer": "The trade was denied at the approval hook again. Nothing was sent. \n\nIt looks like the approval prompt needs you to click **Allow** / **Approve** in the Claude Code permission dialog when it appears. The pod plugin's hook shows the trade details and asks for your confirmation before sending anything.\n\nWould you like to try once more? When the permission dialog pops up, approve it and the buy order will go through. If your permission mode is set to auto-deny these commands, we'd need to adjust that first."
+}

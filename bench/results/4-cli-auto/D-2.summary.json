@@ -1,0 +1,18 @@
+{
+  "branch": "4-cli-auto",
+  "case": "D",
+  "run": 2,
+  "finished": true,
+  "turns": 32,
+  "tool_calls": 30,
+  "tools": {
+    "Bash": 24,
+    "Read": 5,
+    "Skill": 1
+  },
+  "seconds": 59,
+  "cost_usd": 0.39886699999999997,
+  "permission_denials": 0,
+  "send_attempts": 5,
+  "answer": "Four out of five filled:\n\n- **NVDA** — Filled 0.013167 at $152.31\n- **AAPL** — Filled 0.005622 at $357.19\n- **SPY** — Filled 0.002766 at $723.70\n- **GLD** — Filled 0.00056 at $3,574.09\n- **SenseTime** — Not filled: nothing was available at the price before it expired (the book was empty on the sell side)\n\nSenseTime had no sellers at the time. Want me to retry it, maybe with a wider band or a limit order resting in the book?"
+}

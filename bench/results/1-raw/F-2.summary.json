@@ -1,0 +1,19 @@
+{
+  "branch": "1-raw",
+  "case": "F",
+  "run": 2,
+  "finished": true,
+  "turns": 23,
+  "tool_calls": 24,
+  "tools": {
+    "Agent": 3,
+    "Bash": 17,
+    "Skill": 1,
+    "WebFetch": 3
+  },
+  "seconds": 164,
+  "cost_usd": 0.7117113350000002,
+  "permission_denials": 0,
+  "send_attempts": 1,
+  "answer": "Done. Bought **0.065785 NVDA** at **$152.44**, filled for **$10.03** total.\n\n- Market: NVDA/USD perp\n- Side: Long\n- Status: **filled**\n- Tx: `0x1e230dd0...ba3b941`"
+}

@@ -1,0 +1,18 @@
+{
+  "branch": "2-manual",
+  "case": "A",
+  "run": 3,
+  "finished": true,
+  "turns": 9,
+  "tool_calls": 7,
+  "tools": {
+    "Bash": 5,
+    "Read": 1,
+    "Skill": 1
+  },
+  "seconds": 28,
+  "cost_usd": 0.197674,
+  "permission_denials": 0,
+  "send_attempts": 0,
+  "answer": "Everything is set up and ready. Here's the summary:\n\n**Wallet:** Foundry keystore `pod-2-manual`\n- Address: `0x6273a78912005AD6C3c4C1C3154ebAcbFd590d67`\n- Password source: macOS Keychain\n- Nonce: 0 (never sent a transaction)\n\n**Network:** Pod staging is live — chain id 129302, writes open, not paused.\n\n**Balance:** 20.00 USD cash, no open positions.\n\nYes, we can trade. The account has $20 of play money and the network is accepting orders. What would you like to do?"
+}

@@ -1,0 +1,18 @@
+{
+  "branch": "3-plugin",
+  "case": "A",
+  "run": 3,
+  "finished": true,
+  "turns": 5,
+  "tool_calls": 3,
+  "tools": {
+    "Bash": 1,
+    "Skill": 1,
+    "ToolSearch": 1
+  },
+  "seconds": 17,
+  "cost_usd": 0.14670550000000002,
+  "permission_denials": 0,
+  "send_attempts": 0,
+  "answer": "**Approval** — Approve a test transaction from wallet `0x8B73c374C7564fC3673cB0c7F10455bAfc7c9460` on pod staging? It places a maker-only buy of `0.001` `NVDA/USD` at $`75.78` (half the oracle price of $`151.56`, so it cannot fill), then cancels it as soon as it rests in the book. This proves the wallet can trade.\n\n- **Approve** — Send the order and the cancel now. Takes about 15 seconds.\n- **Deny** — Send nothing. The wallet stays connected but unproven; you can run the test later."
+}

@@ -1,0 +1,18 @@
+{
+  "branch": "3-plugin",
+  "case": "D",
+  "run": 3,
+  "finished": true,
+  "turns": 17,
+  "tool_calls": 15,
+  "tools": {
+    "Bash": 12,
+    "Read": 2,
+    "Skill": 1
+  },
+  "seconds": 50,
+  "cost_usd": 0.22298750000000003,
+  "permission_denials": 0,
+  "send_attempts": 0,
+  "answer": "All five plans are ready. Here's the summary:\n\n**Approval — 5 market buys, ~$2 each**\n\n| # | Market | Size | Worst price | Value ~$2 | Fee |\n|---|--------|------|------------|-----------|-----|\n| 1 | SenseTime Group perp | 15.388567 | $0.13 | $2.00 | $0.0009 |\n| 2 | NVDA perp | 0.013196 | $154.59 | $2.00 | $0.0009 |\n| 3 | AAPL perp | 0.005625 | $362.62 | $2.00 | $0.0009 |\n| 4 | SPY perp | 0.002769 | $736.61 | $2.00 | $0.0009 |\n| 5 | GLD perp | 0.00056 | $3,637.37 | $2.00 | $0.0009 |\n\nTotal ~$10 notional, ~$0.51 margin, ~$0.005 in fees. Free margin after: ~$19.39.\n\nEach is a market order (immediate-or-cancel) with a 2% worst-price band from the current price. Sizes were rounded down to each market's step.\n\n**Approve** or **Deny**?"
+}

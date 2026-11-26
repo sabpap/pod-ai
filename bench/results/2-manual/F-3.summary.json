@@ -1,0 +1,18 @@
+{
+  "branch": "2-manual",
+  "case": "F",
+  "run": 3,
+  "finished": true,
+  "turns": 17,
+  "tool_calls": 15,
+  "tools": {
+    "Bash": 12,
+    "Read": 2,
+    "Skill": 1
+  },
+  "seconds": 67,
+  "cost_usd": 0.5069055,
+  "permission_denials": 0,
+  "send_attempts": 1,
+  "answer": "**Filled.** Bought 0.065858 NVDA at $152.33 (~$10.03 notional), fee $0.0045. The order is fully filled as a market buy on NVDA perp."
+}

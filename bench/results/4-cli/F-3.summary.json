@@ -1,0 +1,17 @@
+{
+  "branch": "4-cli",
+  "case": "F",
+  "run": 3,
+  "finished": true,
+  "turns": 10,
+  "tool_calls": 8,
+  "tools": {
+    "Bash": 7,
+    "Skill": 1
+  },
+  "seconds": 62,
+  "cost_usd": 0.2216245,
+  "permission_denials": 2,
+  "send_attempts": 2,
+  "answer": "Nothing was sent — the approval hook blocked the send both times. This happens when the permission prompt is denied or the permission mode doesn't allow it.\n\nTwo ways forward:\n\n1. **Approve the permission prompt** — when you see the Claude Code dialog for `pod trade send`, click Allow.\n2. **Switch to auto-approval** — run `pod settings set approval auto` yourself (I can't change it for you per the rules). After that, sends go through without a prompt."
+}

@@ -1,0 +1,17 @@
+{
+  "branch": "4-cli",
+  "case": "C",
+  "run": 1,
+  "finished": true,
+  "turns": 8,
+  "tool_calls": 6,
+  "tools": {
+    "Bash": 5,
+    "Skill": 1
+  },
+  "seconds": 19,
+  "cost_usd": 0.217819,
+  "permission_denials": 1,
+  "send_attempts": 1,
+  "answer": "The approval hook is asking you to confirm. Approve to send the order, or deny and nothing is sent."
+}

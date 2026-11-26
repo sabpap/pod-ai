@@ -1,0 +1,78 @@
+{
+  "ok": true,
+  "view": "trades",
+  "account": "0x6273a78912005AD6C3c4C1C3154ebAcbFd590d67",
+  "connected": true,
+  "as_of": "2026-11-26T22:42:10Z",
+  "since": "2026-11-26T14:42:10Z",
+  "count": 6,
+  "more": false,
+  "data": [
+    {
+      "time": "2026-11-26T21:34:04Z",
+      "market": "NVDA perp",
+      "side": "sell",
+      "size": "0.065858",
+      "price": "151.86",
+      "value_usd": "10.00119588",
+      "fee_usd": "0.004500538146",
+      "type": "market",
+      "order_id": "0x7f7e4931f6a44a58dafb754751acf5c9381315e972d1f254e806bead32f2ceaf"
+    },
+    {
+      "time": "2026-11-26T21:33:44Z",
+      "market": "NVDA perp",
+      "side": "buy",
+      "size": "0.065858",
+      "price": "152.33",
+      "value_usd": "10.03214914",
+      "fee_usd": "0.004514467113",
+      "type": "market",
+      "order_id": "0x5550a33487be230493edb5a81a25124baf571199ea4083a331d07f0a37519a9c"
+    },
+    {
+      "time": "2026-11-26T21:32:44Z",
+      "market": "NVDA perp",
+      "side": "sell",
+      "size": "0.065884",
+      "price": "151.82",
+      "value_usd": "10.00250888",
+      "fee_usd": "0.004501128996",
+      "type": "market",
+      "order_id": "0xcd28a29f4670aa979c16f9bc6a11526bcb7317357729fc6ec59ce5869c8215eb"
+    },
+    {
+      "time": "2026-11-26T21:32:25Z",
+      "market": "NVDA perp",
+      "side": "buy",
+      "size": "0.065884",
+      "price": "152.3",
+      "value_usd": "10.0341332",
+      "fee_usd": "0.00451535994",
+      "type": "market",
+      "order_id": "0xd61a0eafeb182ac7afcd9e5b4f449341db0c2652d96c2006cd2e812f6795cd30"
+    },
+    {
+      "time": "2026-11-26T21:31:16Z",
+      "market": "NVDA perp",
+      "side": "sell",
+      "size": "0.065866",
+      "price": "151.68",
+      "value_usd": "9.99055488",
+      "fee_usd": "0.004495749696",
+      "type": "market",
+      "order_id": "0xc4786e985bf6db8bf38c27f9cddf940e464aba116b18297e72d902a85f7dcaad"
+    },
+    {
+      "time": "2026-11-26T21:30:55Z",
+      "market": "NVDA perp",
+      "side": "buy",
+      "size": "0.065866",
+      "price": "152.3",
+      "value_usd": "10.0313918",
+      "fee_usd": "0.00451412631",
+      "type": "market",
+      "order_id": "0x1abffe6f9435b1a69373928077516f8803ae30e2146c93a476e099b99f6211e8"
+    }
+  ]
+}

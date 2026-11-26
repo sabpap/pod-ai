@@ -1,0 +1,17 @@
+{
+  "branch": "4-cli",
+  "case": "B",
+  "run": 2,
+  "finished": true,
+  "turns": 6,
+  "tool_calls": 4,
+  "tools": {
+    "Bash": 3,
+    "Skill": 1
+  },
+  "seconds": 32,
+  "cost_usd": 0.2155975,
+  "permission_denials": 0,
+  "send_attempts": 0,
+  "answer": "Here's the summary:\n\n## Account\n\n| | |\n|---|---|\n| **Account value** | **$20.00** |\n| **Cash** | $20.00 |\n| **Unrealized P&L** | $0.00 |\n| **Withdrawable** | $20.00 |\n| **Open positions** | 0 |\n| **Open orders** | 0 |\n\n## Available Markets (60 total)\n\n**Perpetuals (54):**\n\n| Region | Markets |\n|---|---|\n| **US equities** | NVDA ($151.77), AAPL ($356.48), GOOGL ($275.78), AMZN ($247.44), META ($614.22) |\n| **US indices / macro** | SPY ($722.39), QQQ ($638.44), GLD ($3,566.19) |\n| **Private / pre-IPO** | SPCX / SpaceX ($129.48), OPENAI ($1,308.66), ANT / Anthropic ($84.26, +20.8% today) |\n| **Hong Kong** | Tencent 0700 ($43.96), Xiaomi 1810 ($3.42), Alibaba 9988 ($10.59), Baidu 9888 ($7.68), SMIC 0981 ($5.88), BYD 1211 ($7.43), Kuaishou 1024 ($2.53), Hua Hong 1347 ($8.16), Zhipu AI 2513 ($38.27, +7.7%), MiniMax 0100 ($12.31, +5%), SenseTime 0020 ($0.13, +8.3%), Biren 6082 ($1.67) |\n| **Japan** | Sony ($28.09), SoftBank ($18.65, +9.3%), Tokyo Electron ($49.26), Advantest ($155.97), Shin-Etsu ($34.99), Keyence ($90.07), Disco ($265.38), Fanuc ($32.12), Murata ($30.33), Yaskawa ($20.28), SMC ($354.77), Nidec ($9.93), Harmonic Drive ($23.09), Toyota ($21.13) |\n| **Korea** | Samsung ($128.33), SK Hynix ($798.62), Hyundai ($194.40), Hanmi Semi ($110.46), NAVER ($118.73), Rainbow Robotics ($347.55), ROBOTIS ($209.05), SPG ($66.68) |\n| **China A-shares** | NAURA ($72.04), Hygon ($23.71), Inovance ($7.76), Tuopu ($6.84), Leader Drive ($34.15), JCET ($7.17), Sanhua ($4.64), Empyrean ($13.20) |\n\n**Spot (6):** NVDAx, AAPLx, GOOGLx, QQQx, SPYx, GLDx (all zero 24h volume)\n\nNotable movers today: ANT/Anthropic +20.8%, SoftBank +9.3%, SenseTime +8.3%, Zhipu AI +7.7%, MiniMax +5.0%."
+}

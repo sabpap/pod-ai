@@ -1,0 +1,20 @@
+{
+  "branch": "1-raw",
+  "case": "A",
+  "run": 3,
+  "finished": true,
+  "turns": 15,
+  "tool_calls": 17,
+  "tools": {
+    "Agent": 1,
+    "Bash": 10,
+    "Read": 1,
+    "Skill": 1,
+    "WebFetch": 4
+  },
+  "seconds": 65,
+  "cost_usd": 0.25170412,
+  "permission_denials": 0,
+  "send_attempts": 0,
+  "answer": "Everything is working. Here's the summary:\n\n**Wallet:** `pod-1-raw` keystore, address [`0xaD60A063D766742A1b0bEed69e5425dBDf403834`](https://staging-app.podtestnet.dev), password in Keychain.\n\n**Can we trade? Yes.**\n\n- **Cash balance:** 20 USD (the `cash` field is `20000000000000000000` = 20 × 10¹⁸, pod uses 18-decimal fixed-point)\n- **No open positions or token balances** — clean slate\n- **Markets are live** — NVDAx/USD, AAPLx/USD and others are active, with 500 ms auction intervals\n- The keystore password is in the macOS Keychain under `foundry-keystore` / `pod-1-raw`, so `cast` can sign transactions without manual input\n\nYou have $20 to trade with across spot and perp markets. Ready when you are."
+}

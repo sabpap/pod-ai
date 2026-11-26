@@ -1,0 +1,18 @@
+{
+  "branch": "2-manual",
+  "case": "D",
+  "run": 1,
+  "finished": true,
+  "turns": 15,
+  "tool_calls": 13,
+  "tools": {
+    "Bash": 10,
+    "Read": 2,
+    "Skill": 1
+  },
+  "seconds": 103,
+  "cost_usd": 0.610245,
+  "permission_denials": 0,
+  "send_attempts": 0,
+  "answer": "Here's the plan — five market buy orders on the perp markets, each targeting ~$10 of notional:\n\n| Market | Mark price | Size (units) | Value | Margin (5%) | Worst buy (+2%) |\n|---|---|---|---|---|---|\n| SenseTime | $0.1300 | 76.940349 | $10.00 | $0.50 | $0.13 |\n| NVDA | $151.79 | 0.065879 | $10.00 | $0.50 | $154.82 |\n| AAPL | $355.56 | 0.028124 | $10.00 | $0.50 | $362.67 |\n| SPY | $722.35 | 0.013843 | $10.00 | $0.50 | $736.79 |\n| GLD | $3,566.09 | 0.002804 | $10.00 | $0.50 | $3,637.41 |\n\n**Totals:** ~$50 notional, ~$2.50 margin out of $20.00 cash. All are market orders (immediate-or-cancel), which fill at the round's clearing price — the worst price is a 2% safety band.\n\nGo ahead and send all five?"
+}

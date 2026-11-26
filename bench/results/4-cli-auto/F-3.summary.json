@@ -1,0 +1,18 @@
+{
+  "branch": "4-cli-auto",
+  "case": "F",
+  "run": 3,
+  "finished": true,
+  "turns": 2,
+  "tool_calls": 7,
+  "tools": {
+    "Bash": 5,
+    "Read": 1,
+    "Skill": 1
+  },
+  "seconds": 35,
+  "cost_usd": 0.20365149999999999,
+  "permission_denials": 0,
+  "send_attempts": 1,
+  "answer": "Filled: bought 0.065767 NVDA perp at $152.41, fee $0.005. You're long NVDA."
+}

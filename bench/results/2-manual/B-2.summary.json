@@ -1,0 +1,18 @@
+{
+  "branch": "2-manual",
+  "case": "B",
+  "run": 2,
+  "finished": true,
+  "turns": 11,
+  "tool_calls": 9,
+  "tools": {
+    "Bash": 5,
+    "Read": 3,
+    "Skill": 1
+  },
+  "seconds": 60,
+  "cost_usd": 0.425114,
+  "permission_denials": 0,
+  "send_attempts": 0,
+  "answer": "Here's the full picture.\n\n---\n\n## Your Account\n\n| | Amount |\n|---|---|\n| **Account value** | **$20.00** |\n| Cash | $20.00 |\n| Withdrawable | $20.00 |\n| Net deposits | $20.00 |\n| Positions | None |\n| Spot holdings | None |\n| Unrealized P&L | $0.00 |\n\nYour account is fully in cash with no open positions.\n\n---\n\n## Available Markets (61 total: 55 active, 2 disabled)\n\n### US Equities & Indices (perps)\n\n| Market | Mark Price | 24h Change | 24h Volume |\n|---|---|---|---|\n| NVDA | $151.77 | +2.01% | $32,521 |\n| AAPL | $355.52 | -0.14% | $47,350 |\n| GOOGL | $275.78 | +0.82% | $31,414 |\n| META | $614.22 | -0.09% | $14,333 |\n| AMZN | $247.44 | +0.49% | $14,948 |\n| QQQ | $638.44 | +0.41% | $49,035 |\n| SPY | $722.38 | +0.20% | $33,748 |\n| GLD | $3,567.03 | +0.17% | $47,629 |\n| SPCX | $129.64 | +1.09% | $31,970 |\n\n### Pre-IPO / Private\n\n| Market | Mark Price | 24h Change | 24h Volume |\n|---|---|---|---|\n| OPENAI | $1,308.66 | +0.55% | $15,430 |\n| ANTHROPIC (disabled) | -- | -- | -- |\n\n### Japan\n\n| Market | Mark Price | 24h Change |\n|---|---|---|\n| TOKYO ELECTRON | $49.58 | +0.34% |\n| ADVANTEST CORP | $155.97 | +4.38% |\n| DISCO CORP | $265.58 | +3.93% |\n| KEYENCE CORP | $89.84 | -2.79% |\n| SHIN-ETSU CHEMICAL | $35.01 | -0.47% |\n| SOFTBANK GROUP | $18.65 | +9.25% |\n| FANUC CORP | $32.12 | -0.46% |\n| YASKAWA ELECTRIC | $20.28 | -0.68% |\n| NIDEC CORP | $9.93 | -0.30% |\n| SONY GROUP | $28.03 | -1.89% |\n| MURATA MFG | $30.33 | +4.45% |\n| SMC CORP | $354.77 | +0.52% |\n| TOYOTA MOTOR | $21.13 | -1.21% |\n| Harmonic Drive | $23.09 | +0.35% |\n\n### Korea\n\n| Market | Mark Price | 24h Change |\n|---|---|---|\n| SK HYNIX | $798.62 | 0.00% |\n| SAMSUNG ELECTRONICS | $128.42 | +0.16% |\n| HANMI SEMICONDUCTOR | $110.46 | +0.67% |\n| HYUNDAI MOTOR | $194.49 | -3.05% |\n| NAVER | $118.61 | +0.98% |\n| ROBOTIS | $210.51 | -2.76% |\n| Rainbow Robotics | $349.11 | +1.88% |\n\n### Hong Kong / China\n\n| Market | Mark Price | 24h Change |\n|---|---|---|\n| 0700-HK (Tencent) | $43.98 | +0.02% |\n| 9988-HK (Alibaba) | $10.59 | +2.21% |\n| 9888-HK (Baidu) | $7.68 | -1.16% |\n| 1810-HK (Xiaomi) | $3.42 | -0.86% |\n| KUAISHOU | $2.53 | 0.00% |\n| SMIC | $5.88 | +1.55% |\n| BYD ORD SHS H | $7.43 | -1.32% |\n| Hua Hong | $8.17 | -1.20% |\n| SenseTime Group | $0.13 | +8.33% |\n| MiniMax | $12.31 | +4.39% |\n| Zhipu AI / Z.ai | $38.41 | +7.19% |\n| Biren Technology | $1.68 | -0.59% |\n| Hygon Information | $23.71 | +0.63% |\n| NAURA Technology | $72.04 | -2.88% |\n| Empyrean Technology | $13.20 | +3.58% |\n| + several more China industrials/robotics |\n\n### Spot Markets (6)\n\n| Market | Last Price |\n|---|---|\n| NVDAx | $188.47 |\n| AAPLx | $345.95 |\n| GOOGLx | $287.35 |\n| QQQx | $658.92 |\n| SPYx | $739.83 |\n| GLDx | $4,045.32 |\n\nSpot markets have zero 24h volume — they appear inactive right now.\n\n### Notable Movers Today\n\n| Market | 24h Change |\n|---|---|\n| ANT | **+20.80%** |\n| SOFTBANK GROUP | +9.25% |\n| SenseTime Group | +8.33% |\n| Zhipu AI / Z.ai | +7.19% |\n| Tuopu Group | -7.30% |\n| Leader Drive | -5.48% |\n\nAll prices are mark prices for perps, last-traded for spot. This is pod staging (testnet with play money)."
+}

@@ -1,0 +1,17 @@
+{
+  "branch": "4-cli",
+  "case": "A",
+  "run": 3,
+  "finished": true,
+  "turns": 6,
+  "tool_calls": 4,
+  "tools": {
+    "Bash": 3,
+    "Skill": 1
+  },
+  "seconds": 19,
+  "cost_usd": 0.10706550000000001,
+  "permission_denials": 0,
+  "send_attempts": 0,
+  "answer": "The wallet is connected. The test transaction needs your approval before I send it:\n\n**Test plan:** Place a tiny maker-only **buy** of 0.001 NVDA/USD at **$75.78** — half the oracle price of $151.56, so it cannot fill — then cancel it as soon as it rests in the book. Two transactions on staging, about 15 seconds, no cost.\n\nShall I go ahead and send it?"
+}

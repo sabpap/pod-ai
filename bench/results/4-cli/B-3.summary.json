@@ -1,0 +1,17 @@
+{
+  "branch": "4-cli",
+  "case": "B",
+  "run": 3,
+  "finished": true,
+  "turns": 6,
+  "tool_calls": 4,
+  "tools": {
+    "Bash": 3,
+    "Skill": 1
+  },
+  "seconds": 29,
+  "cost_usd": 0.2115755,
+  "permission_denials": 0,
+  "send_attempts": 0,
+  "answer": "Here's the summary:\n\n## Account\n\n| | |\n|---|---|\n| **Account value** | $20.00 |\n| **Cash** | $20.00 |\n| **Unrealized P&L** | $0.00 |\n| **Withdrawable** | $20.00 |\n| **Open positions** | 0 |\n| **Open orders** | 0 |\n\n## Available Markets (60 total)\n\n**US Equities & Indices (perps)**\nNVDA ($151.77), AAPL ($356.49), GOOGL ($276.35), AMZN ($247.51), META ($612.90), SPY ($722.42), QQQ ($638.71), SPCX / SpaceX ($129.67), GLD / Gold ($3,566.23)\n\n**Private / AI (perps)**\nOPENAI ($1,308.66), ANT / Anthropic ($84.26, +20.8% today)\n\n**Hong Kong (perps)**\n0700-HK / Tencent ($43.96), 1810-HK / Xiaomi ($3.42), 9988-HK / Alibaba ($10.56), 9888-HK / Baidu ($7.64), Kuaishou ($2.52), SMIC ($5.88), BYD ($7.43), Hua Hong ($8.17), Zhipu AI ($38.30, +8.4%), MiniMax ($12.30, +4.7%), SenseTime ($0.13, +8.3%), Biren Technology ($1.68)\n\n**Japan (perps)**\nSony ($28.03), SoftBank ($18.66, +10.0%), Tokyo Electron ($49.26), Advantest ($155.97), Disco ($265.38), Keyence ($90.07), Shin-Etsu ($35.18), Fanuc ($32.12), Murata ($30.33), Yaskawa ($20.28), SMC ($354.77), Nidec ($9.93), Toyota ($21.13), Harmonic Drive ($23.09)\n\n**Korea (perps)**\nSamsung ($128.57), SK Hynix ($798.20), Hanmi Semiconductor ($110.46), Hyundai Motor ($194.38), Naver ($118.61), Rainbow Robotics ($347.55), Robotis ($210.28), SPG ($66.68)\n\n**China A-shares (perps)**\nNAURA Technology ($71.99), Hygon ($23.71), Inovance ($7.77), Tuopu ($6.83), JCET ($7.14), Leader Drive ($34.15), Sanhua ($4.64), Empyrean ($13.26)\n\n**Spot markets** (6)\nNVDAx, AAPLx, GOOGLx, QQQx, SPYx, GLDx\n\nAll 60 markets are active. The account is ready to trade with $20 in cash, asks before every trade, and market orders stay within 2% of the mark price."
+}

@@ -1,0 +1,21 @@
+{
+  "branch": "1-raw",
+  "case": "A",
+  "run": 1,
+  "finished": true,
+  "turns": 19,
+  "tool_calls": 18,
+  "tools": {
+    "Agent": 1,
+    "Bash": 13,
+    "Glob": 1,
+    "Read": 1,
+    "Skill": 1,
+    "WebFetch": 1
+  },
+  "seconds": 69,
+  "cost_usd": 0.45044266,
+  "permission_denials": 0,
+  "send_attempts": 0,
+  "answer": "Everything is already in place. Here's the summary:\n\n**Wallet**: `pod-1-raw` keystore is set up and working.\n- Address: `0xaD60A063D766742A1b0bEed69e5425dBDf403834`\n- `POD_KEYSTORE=pod-1-raw` is already set in the environment\n- Password is in the macOS Keychain (service `foundry-keystore`, account `pod-1-raw`)\n\n**Can we trade? Yes.**\n- Cash balance: **20 USD** (20e18 in 1e18 units)\n- No open positions, no existing orders\n- 62 markets available (6 spot, 56 perp) — US equities (NVDA, AAPL, GOOGL, AMZN, META, SPY, QQQ, GLD), Asian tech/semis (Samsung, SK Hynix, Tokyo Electron, etc.), AI companies (OpenAI, MiniMax, Zhipu AI), and more\n- The only disabled markets are `ANTHROPIC/USD` perp and `TEST/USD` spot — the rest are active\n\nThe account is funded and ready to place orders. What would you like to trade?"
+}

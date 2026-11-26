@@ -1,0 +1,19 @@
+{
+  "branch": "1-raw",
+  "case": "C",
+  "run": 3,
+  "finished": true,
+  "turns": 20,
+  "tool_calls": 21,
+  "tools": {
+    "Agent": 3,
+    "Bash": 14,
+    "Skill": 1,
+    "WebFetch": 3
+  },
+  "seconds": 158,
+  "cost_usd": 0.6262654849999998,
+  "permission_denials": 0,
+  "send_attempts": 1,
+  "answer": "Order filled. Here's the summary:\n\n| | |\n|---|---|\n| **Market** | NVDA/USD perp |\n| **Side** | Buy (open long) |\n| **Size** | 0.065741 NVDA |\n| **Fill price** | $152.26 |\n| **Notional** | ~$10.01 |\n| **Fee** | ~$0.0045 (0.045% taker) |\n| **Status** | **Filled** |\n| **Tx** | [`0x0c9e...c0c0`](https://staging-app.podtestnet.dev) |\n| **Order ID** | `0x9c22...0507` |\n\nYou now have a 0.065741 NVDA long position at $152.26."
+}

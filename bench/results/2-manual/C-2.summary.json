@@ -1,0 +1,18 @@
+{
+  "branch": "2-manual",
+  "case": "C",
+  "run": 2,
+  "finished": true,
+  "turns": 17,
+  "tool_calls": 15,
+  "tools": {
+    "Bash": 12,
+    "Read": 2,
+    "Skill": 1
+  },
+  "seconds": 75,
+  "cost_usd": 0.5018625,
+  "permission_denials": 0,
+  "send_attempts": 0,
+  "answer": "Here's the order I'd send:\n\n| | |\n|---|---|\n| **Market** | NVDA/USD perp |\n| **Side** | Buy (long) |\n| **Size** | 0.065878 NVDA ($10 / $151.79 mark, rounded down to lot) |\n| **Type** | Market (IOC) |\n| **Worst price** | $154.83 (mark + 2%) |\n| **Value at mark** | ~$10.00 |\n| **Taker fee** | ~$0.0045 |\n| **Margin needed** | ~$0.50 (5%) |\n| **Cash available** | $20.00 |\n\nThe order fills at the round's clearing price (usually much better than the $154.83 worst). Shall I send it?"
+}

@@ -1,0 +1,19 @@
+{
+  "branch": "1-raw",
+  "case": "F",
+  "run": 1,
+  "finished": true,
+  "turns": 14,
+  "tool_calls": 16,
+  "tools": {
+    "Agent": 2,
+    "Bash": 9,
+    "Skill": 1,
+    "WebFetch": 4
+  },
+  "seconds": 122,
+  "cost_usd": 0.465714525,
+  "permission_denials": 0,
+  "send_attempts": 1,
+  "answer": "Order sent and confirmed on-chain.\n\n**NVDA market buy — $10 worth (~0.0658 NVDA)**\n\n| Field | Value |\n|---|---|\n| Market | NVDA/USD perp |\n| Side | Buy (long) |\n| Size | 0.065789 NVDA (~$10) |\n| Type | Market (IOC) |\n| Price cap | $200 |\n| Status | **Success** (status 1) |\n| Tx hash | `0x0648e12cc5ee882952607bd50daba2789c87886113467a14e5e8d1ec3af1960e` |\n| Block | 14438804 |\n| From | `0xaD60A063D766742A1b0bEed69e5425dBDf403834` |\n\nThe transaction landed in block 14438804. The order was submitted as a market buy with IOC flag — it will fill against available liquidity at or below the $200 price cap (market was at ~$152)."
+}

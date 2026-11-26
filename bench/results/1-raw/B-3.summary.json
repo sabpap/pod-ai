@@ -1,0 +1,19 @@
+{
+  "branch": "1-raw",
+  "case": "B",
+  "run": 3,
+  "finished": true,
+  "turns": 12,
+  "tool_calls": 11,
+  "tools": {
+    "Agent": 1,
+    "Bash": 8,
+    "Skill": 1,
+    "WebFetch": 1
+  },
+  "seconds": 55,
+  "cost_usd": 0.24125226500000002,
+  "permission_denials": 0,
+  "send_attempts": 0,
+  "answer": "Here's the summary:\n\n---\n\n### Your Account\n\n| | |\n|---|---|\n| **Wallet** | `0xaD60A063D766742A1b0bEed69e5425dBDf403834` |\n| **Cash balance** | **$20.00 USD** |\n| **Account value** | **$20.00 USD** |\n| **Open positions** | None |\n| **Unrealized PnL** | $0.00 |\n\n---\n\n### Available Markets (62 total)\n\n**Spot markets (7)** — synthetic equities and commodities:\n\n| Market | Price |\n|---|---|\n| NVDAx/USD | $188.47 |\n| AAPLx/USD | $345.95 |\n| GOOGLx/USD | $287.35 |\n| QQQx/USD | $658.92 |\n| SPYx/USD | $739.83 |\n| GLDx/USD | $4,045.32 |\n| TEST/USD | (inactive) |\n\n**Perpetual markets (55)** — the active ones, grouped by region:\n\n**US tech & indices:** NVDA ($151.64), AAPL ($355.52), GOOGL ($275.85), QQQ ($639.57), SPY ($722.17), GLD ($3,573.93), AMZN ($247.23), META ($612.19)\n\n**Private AI companies:** OPENAI ($1,235.69), ANTHROPIC ($1,614.47), ANT ($84.22), SPCX ($130.04)\n\n**Asia-Pacific equities (HK, Japan, Korea, China):** 0700-HK / Tencent ($44.02), 9988-HK / Alibaba ($10.60), 9888-HK / Baidu ($7.61), 1810-HK / Xiaomi ($3.42), Samsung ($128.78), SK Hynix ($793.72), Hyundai ($195.30), Naver ($118.82), SoftBank ($18.78), Tokyo Electron ($49.10), Advantest ($156.42), Sony ($28.02), Toyota ($21.18), and many more semiconductor / robotics / AI names across China, Japan, and Korea.\n\n**Robotics:** ROBOTIS ($208.45), Rainbow Robotics ($348.68), Harmonic Drive ($22.91)\n\nAll perp markets are actively trading with 24h volumes. With your $20 balance and up to 20x leverage available, you could take positions worth up to ~$400 notional."
+}

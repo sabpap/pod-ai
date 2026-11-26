@@ -1,0 +1,17 @@
+{
+  "branch": "4-cli",
+  "case": "C",
+  "run": 3,
+  "finished": true,
+  "turns": 8,
+  "tool_calls": 6,
+  "tools": {
+    "Bash": 5,
+    "Skill": 1
+  },
+  "seconds": 20,
+  "cost_usd": 0.15939199999999998,
+  "permission_denials": 1,
+  "send_attempts": 1,
+  "answer": "The approval hook is asking you to confirm the trade. Once you approve, the order will be sent; if you deny, nothing happens."
+}

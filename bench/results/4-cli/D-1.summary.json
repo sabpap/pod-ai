@@ -1,0 +1,17 @@
+{
+  "branch": "4-cli",
+  "case": "D",
+  "run": 1,
+  "finished": true,
+  "turns": 20,
+  "tool_calls": 18,
+  "tools": {
+    "Bash": 17,
+    "Skill": 1
+  },
+  "seconds": 108,
+  "cost_usd": 0.45197350000000003,
+  "permission_denials": 5,
+  "send_attempts": 5,
+  "answer": "Nothing was sent — all five trades were denied in the approval prompts. No orders placed, account unchanged at $20 cash."
+}

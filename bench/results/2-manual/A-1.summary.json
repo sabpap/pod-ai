@@ -1,0 +1,18 @@
+{
+  "branch": "2-manual",
+  "case": "A",
+  "run": 1,
+  "finished": true,
+  "turns": 12,
+  "tool_calls": 10,
+  "tools": {
+    "Bash": 8,
+    "Read": 1,
+    "Skill": 1
+  },
+  "seconds": 32,
+  "cost_usd": 0.314526,
+  "permission_denials": 0,
+  "send_attempts": 0,
+  "answer": "Everything is set up and ready. Here's the summary:\n\n**Wallet:** Foundry keystore `pod-2-manual` at [`~/.foundry/keystores/pod-2-manual`](file:///Users/sabpap/.foundry/keystores/pod-2-manual) [📁](file:///Users/sabpap/.foundry/keystores/), password sourced from the macOS Keychain.\n\n**Address:** `0x6273a78912005AD6C3c4C1C3154ebAcbFd590d67`\n\n**Can we trade?** Yes.\n- Pod staging is up, not read-only, not paused.\n- The wallet opens and signs correctly (nonce 0 — no transactions sent yet).\n- The account holds **$20.00** in cash.\n\nTo use it, set `POD_KEYSTORE=pod-2-manual` in your environment (or pass `--keystore pod-2-manual` to `pod-send.sh`). No other setup is needed — the keystore, password, and network are all in place."
+}

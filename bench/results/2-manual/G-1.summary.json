@@ -1,0 +1,21 @@
+{
+  "branch": "2-manual",
+  "case": "G",
+  "run": 1,
+  "finished": true,
+  "turns": 25,
+  "tool_calls": 23,
+  "tools": {
+    "Bash": 9,
+    "Glob": 1,
+    "Read": 5,
+    "Skill": 1,
+    "ToolSearch": 1,
+    "WebSearch": 6
+  },
+  "seconds": 145,
+  "cost_usd": 1.0677925,
+  "permission_denials": 0,
+  "send_attempts": 0,
+  "answer": "Here's the proposed trade:\n\n**NVDA Perp — Long (market order)**\n\n| | |\n|---|---|\n| Size | 0.065868 NVDA (~$10.00 at mark) |\n| Current mark | $151.82 |\n| Worst fill price | $154.85 (+2% band) |\n| Taker fee | ~$0.0045 |\n| Margin required | ~$0.50 (5%) |\n| Account cash | $19.87 |\n\n**Stop-loss trigger** at $148.78 (2% below mark), limit $145.81, reduce-only, whole-position sizing.\n\nThe buy order and stop-loss will be sent as a batch. After that, I'll monitor the position for 10 minutes and close it at the end.\n\n**Shall I send this?**"
+}

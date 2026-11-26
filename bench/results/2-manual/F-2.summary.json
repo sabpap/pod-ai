@@ -1,0 +1,18 @@
+{
+  "branch": "2-manual",
+  "case": "F",
+  "run": 2,
+  "finished": true,
+  "turns": 19,
+  "tool_calls": 17,
+  "tools": {
+    "Bash": 14,
+    "Read": 2,
+    "Skill": 1
+  },
+  "seconds": 75,
+  "cost_usd": 0.5457044999999999,
+  "permission_denials": 0,
+  "send_attempts": 1,
+  "answer": "**Filled.** Bought 0.065884 NVDA at $152.30 (mark was $151.78). Value ~$10.03, fee ~$0.0045. The order is fully filled."
+}

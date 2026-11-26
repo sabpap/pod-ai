@@ -1,0 +1,19 @@
+{
+  "branch": "1-raw",
+  "case": "B",
+  "run": 1,
+  "finished": true,
+  "turns": 12,
+  "tool_calls": 14,
+  "tools": {
+    "Agent": 1,
+    "Bash": 8,
+    "Skill": 1,
+    "WebFetch": 4
+  },
+  "seconds": 60,
+  "cost_usd": 0.28712609,
+  "permission_denials": 0,
+  "send_attempts": 0,
+  "answer": "Here's the summary:\n\n---\n\n### Markets on pod staging\n\n**62 markets** total — 6 spot + 56 perpetuals. All quoted in USD, all use 0.015% maker / 0.045% taker fees, up to 20x leverage.\n\n**Spot markets (7, 1 disabled):**\n| Market | Status |\n|---|---|\n| NVDAx/USD | active |\n| AAPLx/USD | active |\n| GOOGLx/USD | active |\n| QQQx/USD | active |\n| SPYx/USD | active |\n| GLDx/USD | active |\n| TEST/USD | disabled |\n\n**Perpetual markets (55, 1 disabled):**\n\nUS mega-caps: NVDA, AAPL, GOOGL, QQQ, SPY, GLD, AMZN, META, OPENAI, SPCX\n\nAsia tech & semis: Samsung, SK Hynix, Tokyo Electron, Advantest, TSMC (via SMIC), Keyence, Disco Corp, Shin-Etsu, Hanmi Semi, Hygon, JCET, NAURA, Empyrean, Hua Hong, Biren Tech\n\nAsia internet/AI: Alibaba (9988-HK), Baidu (9888-HK), Tencent (0700-HK), Kuaishou, Xiaomi (1810-HK), SoftBank, Naver, SenseTime, MiniMax, Zhipu AI, ANT\n\nAsia industrials/auto/robotics: Toyota, Hyundai, BYD, Sony, Murata, Nidec, SMC, Fanuc, Yaskawa, Leader Drive, Tuopu, Inovance, Sanhua, Rainbow Robotics, ROBOTIS, Harmonic Drive, SPG\n\nDisabled: ANTHROPIC/USD\n\n---\n\n### Your account\n\n**Wallet:** `0xaD60A063D766742A1b0bEed69e5425dBDf403834`\n\n| Metric | Value |\n|---|---|\n| **Cash balance** | **20.00 USD** |\n| **Account value** | **20.00 USD** |\n| Withdrawable cash | 20.00 USD |\n| Net deposits | 20.00 USD |\n| Open positions | 0 |\n| Spot holdings | 0 |\n| Unrealized PnL | 0 |\n| Realized PnL | 0 |\n\nThe account is clean — 20 USD deposited, no positions or orders open."
+}

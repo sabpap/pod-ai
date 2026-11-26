@@ -1,0 +1,24 @@
+{
+  "branch": "1-raw",
+  "case": "G",
+  "run": 2,
+  "finished": true,
+  "turns": 1,
+  "tool_calls": 45,
+  "tools": {
+    "Agent": 3,
+    "Bash": 22,
+    "Glob": 1,
+    "Monitor": 1,
+    "Read": 1,
+    "Skill": 1,
+    "ToolSearch": 2,
+    "WebFetch": 7,
+    "WebSearch": 7
+  },
+  "seconds": 980,
+  "cost_usd": 2.760428175000001,
+  "permission_denials": 0,
+  "send_attempts": 3,
+  "answer": "Background price logger also finished. Both monitoring tasks are complete — everything's wrapped up cleanly."
+}

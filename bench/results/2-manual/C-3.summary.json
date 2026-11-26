@@ -1,0 +1,18 @@
+{
+  "branch": "2-manual",
+  "case": "C",
+  "run": 3,
+  "finished": true,
+  "turns": 18,
+  "tool_calls": 16,
+  "tools": {
+    "Bash": 13,
+    "Read": 2,
+    "Skill": 1
+  },
+  "seconds": 74,
+  "cost_usd": 0.4874885,
+  "permission_denials": 0,
+  "send_attempts": 0,
+  "answer": "Here's what I'd send — please confirm:\n\n**Market order: Buy NVDA perp**\n\n| | |\n|---|---|\n| **Market** | NVDA/USD perp |\n| **Side** | Buy (long) |\n| **Size** | 0.065878 NVDA |\n| **Value at mark** | ~$10.00 |\n| **Worst fill price** | $154.83 (mark +2%) |\n| **Taker fee** | ~$0.0045 |\n| **Margin needed** | ~$0.50 (5%) |\n| **Cash available** | $20.00 |\n| **Rests** | Immediate-or-cancel (market order) |\n\nThe mark price is $151.80. The order fills at the round's clearing price (usually near the mark), capped at $154.83.\n\nGo ahead?"
+}

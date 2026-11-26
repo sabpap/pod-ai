@@ -1,0 +1,18 @@
+{
+  "branch": "2-manual",
+  "case": "B",
+  "run": 3,
+  "finished": true,
+  "turns": 11,
+  "tool_calls": 9,
+  "tools": {
+    "Bash": 5,
+    "Read": 3,
+    "Skill": 1
+  },
+  "seconds": 40,
+  "cost_usd": 0.3438945,
+  "permission_denials": 0,
+  "send_attempts": 0,
+  "answer": "Here's the summary:\n\n---\n\n**Account** `0x6273…d67`\n\n| | |\n|---|---|\n| **Account value** | $20.00 |\n| **Cash** | $20.00 |\n| **Withdrawable cash** | $20.00 |\n| **Net deposits** | $20.00 |\n| **Positions** | None |\n| **Spot holdings** | None |\n| **Unrealized P&L** | $0.00 |\n\nThe account has $20 in play money with no open positions.\n\n---\n\n**Available markets** — 60 active markets (53 perps, 5 spot):\n\n| Category | Markets |\n|---|---|\n| **US equities (perp)** | AAPL, AMZN, GOOGL, META, NVDA |\n| **US equities (spot)** | AAPLx, GOOGLx, NVDAx |\n| **US indices (perp)** | QQQ, SPY, SPCX, SPG |\n| **US indices (spot)** | QQQx, SPYx |\n| **Gold** | GLD (perp), GLDx (spot) |\n| **Private/pre-IPO** | OPENAI, ANT (Anthropic), MiniMax, Zhipu AI, Biren Technology, SenseTime Group |\n| **Japan** | Advantest, Disco, Fanuc, Harmonic Drive, Keyence, Murata, Nidec, Shin-Etsu Chemical, SMC, SoftBank, Sony, Tokyo Electron, Toyota, Yaskawa Electric |\n| **Korea** | Samsung Electronics, SK Hynix, Hanmi Semiconductor, Hyundai Motor, Naver, Kuaishou, Rainbow Robotics, ROBOTIS |\n| **Hong Kong** | 0700-HK (Tencent), 1810-HK (Xiaomi), 9888-HK (Baidu), 9988-HK (Alibaba), BYD, Hua Hong |\n| **China A-shares** | NAURA Technology, Empyrean Technology, Hygon Information, JCET Group, Inovance, Sanhua Intelligent, Tuopu Group, Leader Drive |\n| **Other** | TESTX |"
+}

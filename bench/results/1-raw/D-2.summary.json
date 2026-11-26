@@ -1,0 +1,19 @@
+{
+  "branch": "1-raw",
+  "case": "D",
+  "run": 2,
+  "finished": true,
+  "turns": 22,
+  "tool_calls": 23,
+  "tools": {
+    "Agent": 3,
+    "Bash": 16,
+    "Skill": 1,
+    "WebFetch": 3
+  },
+  "seconds": 210,
+  "cost_usd": 0.79033736,
+  "permission_denials": 0,
+  "send_attempts": 1,
+  "answer": "All five buys filled. Here's the summary:\n\n| Market | Size | Entry | Notional |\n|---|---|---|---|\n| **SenseTime** | 150 | $0.14 | $21.00 |\n| **NVDA** | 0.15 | $152.31 | $22.85 |\n| **AAPL** | 0.06 | $357.33 | $21.44 |\n| **SPY** | 0.03 | $723.70 | $21.71 |\n| **GLD** | 0.006 | $3,575.52 | $21.45 |\n| | | **Total** | **$108.45** |\n\nEach position is roughly $21 notional (~$1.07 margin at 20x leverage), totaling ~$5.42 margin used out of your ~$19.45 balance."
+}

@@ -1,0 +1,17 @@
+{
+  "branch": "4-cli",
+  "case": "F",
+  "run": 2,
+  "finished": true,
+  "turns": 8,
+  "tool_calls": 6,
+  "tools": {
+    "Bash": 5,
+    "Skill": 1
+  },
+  "seconds": 48,
+  "cost_usd": 0.15045150000000002,
+  "permission_denials": 1,
+  "send_attempts": 1,
+  "answer": "The order wasn't sent — the approval hook prompted and the send was denied. Nothing was sent.\n\nThe approval setting is currently **\"ask\"**, which means every send needs interactive confirmation through the hook. If you'd like to switch it to **auto** (so sends go through without the prompt), you can run `/pod:settings` and change the approval setting. I'm not allowed to change it myself."
+}

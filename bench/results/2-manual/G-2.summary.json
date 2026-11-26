@@ -1,0 +1,20 @@
+{
+  "branch": "2-manual",
+  "case": "G",
+  "run": 2,
+  "finished": true,
+  "turns": 21,
+  "tool_calls": 19,
+  "tools": {
+    "Bash": 10,
+    "Read": 4,
+    "Skill": 1,
+    "ToolSearch": 1,
+    "WebSearch": 3
+  },
+  "seconds": 138,
+  "cost_usd": 0.8141484000000001,
+  "permission_denials": 0,
+  "send_attempts": 0,
+  "answer": "Here's the trade I'd like to place:\n\n**META Perp — Long (buy)**\n\n| Parameter | Value |\n|---|---|\n| Size | 0.016287 META |\n| Order type | Market (immediate-or-cancel) |\n| Worst price | $626.24 (mark + 2%) |\n| Value at mark ($613.97) | ~$10.00 |\n| Taker fee | ~$0.0045 |\n| Margin required | ~$0.50 (5%) |\n| **Stop-loss trigger** | **$601.69** (~2% below mark) |\n| Stop-loss limit | $589.66 (worst execution if triggered) |\n\n**Thesis**: Meta rose ~3% against the broader AI selloff yesterday and announced new AI chips. On pod it's flat/slightly down — potential catch-up move.\n\nThe stop-loss will be armed as a pod trigger (auto-managed by pod, no listener needed) and will close the whole position if the mark drops to $601.69.\n\nShall I go ahead?"
+}

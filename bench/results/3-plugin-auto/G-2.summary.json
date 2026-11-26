@@ -1,0 +1,21 @@
+{
+  "branch": "3-plugin-auto",
+  "case": "G",
+  "run": 2,
+  "finished": true,
+  "turns": 10,
+  "tool_calls": 32,
+  "tools": {
+    "Bash": 15,
+    "Monitor": 1,
+    "Read": 7,
+    "Skill": 2,
+    "ToolSearch": 2,
+    "WebSearch": 5
+  },
+  "seconds": 753,
+  "cost_usd": 1.4051426999999999,
+  "permission_denials": 0,
+  "send_attempts": 4,
+  "answer": "All clean — 0 positions, 0 orders. Here's the final result:\n\n---\n\n## Trade Result: Long ANT (Anthropic) perp\n\n| | |\n|---|---|\n| **Entry** | Buy 0.118564 at **$84.47** |\n| **Exit** | Sell 0.118564 at **$84.20** |\n| **Duration** | ~10 minutes |\n| **Price move** | -$0.27 (-0.32%) |\n| **Gross P&L** | **-$0.032** |\n| **Fees** | $0.009 (entry + exit taker fees) |\n| **Net P&L** | **-$0.041** (about -0.4% on $10) |\n\n**What happened:** ANT drifted sideways-to-slightly-down during the 10-minute window, moving from the $84.47 entry to $84.20 at close. The mark price held well above the $82.50 stop-loss — the IPO-price support thesis was never tested. The position was too short-lived to catch any meaningful continuation of the day's +21% rally; most of that move had already played out before entry.\n\n**Account:** $19.42 (started at $19.46). A small loss on a small trade — the stop-loss was never needed."
+}

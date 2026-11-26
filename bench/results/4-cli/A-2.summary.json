@@ -1,0 +1,17 @@
+{
+  "branch": "4-cli",
+  "case": "A",
+  "run": 2,
+  "finished": true,
+  "turns": 7,
+  "tool_calls": 5,
+  "tools": {
+    "Bash": 4,
+    "Skill": 1
+  },
+  "seconds": 64,
+  "cost_usd": 0.2652925,
+  "permission_denials": 1,
+  "send_attempts": 0,
+  "answer": "Nothing was sent — the test transaction was denied. The wallet is connected but unproven; you can run the test later with `/pod:setup test`.\n\nHere's where things stand:\n\n- **Level:** connected, untested (staging)\n- **Address:** `0x90ae43963c0cE6e1307195a31a1EcD8bCC0451f3`\n- **Wallet type:** Foundry keystore (`pod-4-cli`)\n- **Cash:** $20 USD\n- **Open positions:** 0\n- **Open orders:** 0\n- **Test:** not yet run\n- **Settings:** asks before every trade · market orders within 2% of the price · limit orders rest 1 day (change with `/pod:settings`)\n\n**Can you trade?** The account is funded ($20), so yes — the wallet can send orders. The test transaction would formally prove it, but it's not required. You're on staging (play money), writes are open, and the approval setting is \"ask\" so you'll be prompted before every send."
+}

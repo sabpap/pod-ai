@@ -1,0 +1,18 @@
+{
+  "branch": "3-plugin",
+  "case": "F",
+  "run": 3,
+  "finished": true,
+  "turns": 2,
+  "tool_calls": 7,
+  "tools": {
+    "Bash": 4,
+    "Read": 2,
+    "Skill": 1
+  },
+  "seconds": 42,
+  "cost_usd": 0.2428995,
+  "permission_denials": 0,
+  "send_attempts": 1,
+  "answer": "**Filled:** bought 0.065871 NVDA perp at $152.07, fee $0.0045. You now have an NVDA position worth about $10."
+}
