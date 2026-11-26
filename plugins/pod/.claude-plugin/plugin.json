@@ -1,7 +1,7 @@
 {
   "name": "pod",
-  "version": "0.5.1",
-  "description": "Read and trade on pod network (staging) through pod's own API: connect a wallet, check status, see any account, read markets, follow live updates, place and cancel orders.",
+  "version": "1.0.0",
+  "description": "Use the pod command (pod network, staging) from Claude Code: one skill for everything said in words, setup / status / settings shortcuts, and a hook that makes Claude Code ask before any send. Needs the pod command 1.0.0 or later (cli/install.sh).",
   "author": {
     "name": "pod-ai"
   },

@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "pod",
-      "description": "Read and trade on pod network (staging) through pod's own API.",
+      "description": "The pod command in Claude Code: skills, and a hook that asks before any send. Needs cli/install.sh.",
       "source": "./plugins/pod",
       "category": "finance"
     }
