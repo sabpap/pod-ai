@@ -1,16 +1,14 @@
----
-name: trade
-description: Place, change and cancel orders and stop-loss / take-profit triggers on pod network with the connected wallet - buy or sell a market at a limit price or at market, edit or cancel an order, cancel all orders, close all or part of a position, set, move or remove a stop-loss or take-profit. Use when the user asks to buy, sell, short, go long, place, change or cancel an order, close a position, protect a position, or cancel everything on pod.
-argument-hint: "buy|sell|close|edit|cancel|cancel-all|stop-loss|take-profit|edit-trigger|cancel-trigger ..."
----
-
 # Trade on pod
+
+Read this when the user asks to buy, sell, short, go long, place, change or cancel an order, close a position, protect a position, or cancel everything on pod. It covers placing, changing and cancelling orders and stop-loss / take-profit triggers with the connected wallet: buy or sell a market at a limit price or at market, edit or cancel an order, cancel all orders, close all or part of a position, set, move or remove a stop-loss or take-profit.
 
 Every action goes through four steps: **plan → approve → send → follow**. The script is:
 
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/trade.sh" ACTION ...
 ```
+
+`ACTION` is one of `buy`, `sell`, `close`, `edit`, `cancel`, `cancel-all`, `stop-loss`, `take-profit`, `edit-trigger`, `cancel-trigger`, and then `send` and `follow`.
 
 Only the connected wallet trades, and only on pod staging. If no wallet is connected, point to `/pod:setup`.
 
@@ -36,7 +34,7 @@ Options: `--maker-only` (only rest in the book, never take), `--ioc` (fill what 
 
 **A size is in units of the asset, not dollars.** Prices differ a lot between markets (gold about $3,500, NVDA about $150), so the same size in two markets can be very different amounts of money. When the user names an amount of money, or asks for "a little" or "the same" of several markets, use `--usd AMOUNT` instead of a size: a limit order is sized at its price, a market order at the current price, rounded down to the market's size step. The plan's note shows the size it came to.
 
-Order ids and trigger ids come from `/pod:account orders` and `/pod:account triggers`. Markets can be named loosely: `NVDA`, `nvidia`, `NVDA perp`, `NVDA spot`.
+Order ids and trigger ids come from `account.sh orders` and `account.sh triggers` ([account.md](account.md)). Markets can be named loosely: `NVDA`, `nvidia`, `NVDA perp`, `NVDA spot`.
 
 The plan answer has `plan_id`, `summary`, `preview`, `notes` and `needs_approval`. **Notes** say what was changed: prices and sizes are rounded to the market's steps on the side that never trades worse than asked (a buy price down, a sell price up, a size down), and a market order's worst price is shown. Plans expire after 2 minutes.
 
@@ -70,7 +68,7 @@ Run it **in the background** (Bash `run_in_background`), so the user can keep ta
 
 ## Settings
 
-`approval` (ask or auto), `market_band_pct` (default 2) and `default_ttl` (default 1d) are shown and changed with `/pod:settings`. Change them only when the user asks.
+`approval` (ask or auto), `market_band_pct` (default 2) and `default_ttl` (default 1d) are shown with `profile.sh settings` and changed by the user with `/pod:settings`. Change them only when the user asks; "Settings" in [SKILL.md](../SKILL.md) says which changes the agent may make itself. Switching `approval` to `auto` is always the user's own action.
 
 ## When it fails
 

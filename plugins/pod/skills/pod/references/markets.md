@@ -1,16 +1,14 @@
----
-name: markets
-description: Read pod network's markets - what is traded, current prices (mark, last traded, oracle), 24-hour change, high, low and volume, funding, open interest, the order book and spread, what a market order of a given size would clear at, price bars (1 minute to 1 month) and per-round history. Use when the user asks what can be traded on pod, the price of something, how a market is doing, top movers, the order book or spread, the cost of buying or selling an amount now, price history or charts data, or funding rates.
-argument-hint: "[list [QUERY] | movers | market NAME | book NAME [--size N] | bars NAME [--resolution 1h] | rounds NAME]"
----
-
 # Markets on pod
+
+Read this for questions about pod's markets: what can be traded, current prices (mark, last traded, oracle), how a market is doing, 24-hour change, high, low and volume, top movers, funding rates, open interest, the order book and spread, what buying or selling an amount would cost now (what a market order of a given size would clear at), price history or chart data as price bars (1 minute to 1 month), and per-round history.
 
 One script answers every market question. It only reads; no wallet is needed.
 
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/markets.sh" VIEW [MARKET] [options]
 ```
+
+`VIEW` is one of `list [QUERY]` (the default), `movers`, `market NAME`, `book NAME [--size N]`, `bars NAME [--resolution 1h]`, `rounds NAME`.
 
 | The user asks | Run |
 |---|---|
@@ -47,11 +45,11 @@ Markets are named loosely: `NVDA`, `nvidia`, `NVDA perp`, `NVDA spot`, or the 0x
 - `clears_at_about`: **pod clears each market once per round at one price for everyone**, so a market order of that size would clear at about the price where the resting orders first cover it, not at an average across levels. Orders arriving in the same round can move it.
 - `value_usd`, `fee_usd` (taker fee), `vs_mid_pct`.
 - `enough_depth: false` with `fills_size` when the book holds less than the size.
-- `within_default_band`: whether that price lies inside the market-order band from `/pod:settings`, so a plain market order would fill.
+- `within_default_band`: whether that price lies inside the market-order band (the `market_band_pct` setting), so a plain market order would fill.
 
 ## Bars and rounds
 
-`bars` returns closed bars newest first (the bar still forming is not included; `/pod:live bars` builds it) and a `summary` over them: change, high, low, volume and USD value. `rounds` is pod's per-round record (two rounds a second): traded price, mark, oracle, volume, funding rate and open interest.
+`bars` returns closed bars newest first (the bar still forming is not included; `live.sh bars` builds it, see [live.md](live.md)) and a `summary` over them: change, high, low, volume and USD value. `rounds` is pod's per-round record (two rounds a second): traded price, mark, oracle, volume, funding rate and open interest.
 
 ## Reading the answer
 
@@ -61,4 +59,4 @@ Every answer has `ok`, `view`, `as_of` and `data`. Lists add `count` and `more` 
 
 ## Not here
 
-Company information (descriptions, real-exchange hours) is not in pod's API. Account holdings are `/pod:account`; continuous updates are `/pod:live`; placing orders is `/pod:trade`.
+Company information (descriptions, real-exchange hours) is not in pod's API. Account holdings are in [account.md](account.md); continuous updates are in [live.md](live.md); placing orders is in [trade.md](trade.md).

@@ -1,16 +1,14 @@
----
-name: account
-description: Show what a pod network account holds, what it is worth and what it has done - balance and account value, open positions with profit or loss, margin and liquidation price, open and past orders, trades, stop-loss and take-profit triggers, activity history, forced closes, and results over a period such as the last 7 days. Works for the connected wallet or any address. Use when the user asks about their balance, holdings, positions, orders, trades, fees, profit or loss on pod, or about another pod account.
-argument-hint: "[overview|positions|orders|trades|triggers|activity|forced-closes|results] [0xADDRESS] [--since 7d] [--limit N]"
----
-
 # Account: what an account holds and has done
+
+Read this for questions about what a pod account holds, what it is worth and what it has done: balance and account value, open positions with profit or loss, margin and liquidation price, open and past orders, trades and fees, stop-loss and take-profit triggers, activity history, forced closes, and results over a period such as the last 7 days. It works for the connected wallet or any other address.
 
 Run:
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/account.sh" VIEW [ADDRESS] [options]
+"${CLAUDE_PLUGIN_ROOT}/scripts/account.sh" [VIEW] [ADDRESS] [--since 7d] [--limit N] [--status S] [--raw]
 ```
+
+`VIEW` is one of `overview` (the default), `positions`, `orders`, `trades`, `triggers`, `activity`, `forced-closes`, `results`.
 
 `ADDRESS` defaults to the connected wallet. Any address can be read: pod's account data is public, and no key is needed. Nothing here sends a transaction.
 
