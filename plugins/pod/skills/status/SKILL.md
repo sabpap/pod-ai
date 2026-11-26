@@ -1,6 +1,6 @@
 ---
 name: status
-description: Check whether the pod plugin can act on pod network right now, and what the agent can and cannot do there. Use when the user asks if pod is connected, working or ready, which wallet is in use, whether the agent can trade, or why something on pod failed; and before acting on pod when the current state is unknown.
+description: Check whether the pod plugin can act on pod network right now, and what the agent can and cannot do there. Use when the user asks if pod is connected, working or ready, which wallet is in use, whether the agent can trade, or why something on pod failed. Not for account, market, trading or live requests; the main pod skill handles those and runs the check itself when the state is unknown.
 argument-hint: "[--quick]"
 ---
 
