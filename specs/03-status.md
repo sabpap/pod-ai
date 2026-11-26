@@ -111,3 +111,7 @@ Tests: 22 offline unit checks; 22 read-only smoke checks covering not set up, re
 ## Change: value instead of cash in the summary line (2026-11-26)
 
 After the dev wallet opened a small NVDA perp, the line still said "$100 cash": opening a perp only holds part of the cash as collateral (margin), so cash barely moves. The line now shows the **account value** (cash plus unrealized profit or loss), at most 4 decimals so a small trade stays visible: `pod: ready to trade · 0x035A…Da70 · value $99.9971 · 1 position · 0 orders`. The `account` object adds `unrealized_pnl_usd`. Each position's details (size, prices, margin, liquidation price) belong to the Account section, not to status. Version 0.2.1.
+
+## Change: settings shown (2026-11-26)
+
+Status always reports the trading settings (`approval`, `market_band_pct`, `default_ttl`, with defaults filled in, and the same `in_words`), and its summary line ends with "asks before trading" or "trades without asking". Setup's final answer reports them too, and setup now saves the defaults into the profile. They are changed with the new `/pod:settings` skill. They are not in the Account section, because account reads any address while the settings belong to this machine's connected wallet. Version 0.4.1.

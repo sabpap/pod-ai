@@ -187,13 +187,18 @@ case "$level" in
     summary_line="pod: $level · $(short_addr "$ADDR") · value \$$(money "$(echo "$account" | jq -r '.account_value_usd')") · $npos position$([ "$npos" = 1 ] || echo s) · $nord order$([ "$nord" = 1 ] || echo s)" ;;
 esac
 
-jq -n --arg level "$level" --arg mode "$mode" --arg line "$summary_line" \
+SETTINGS=$(settings_json)
+if [ "$level" != "not set up" ]; then
+  summary_line="$summary_line · $(echo "$SETTINGS" | jq -r 'if .approval == "ask" then "asks before trading" else "trades without asking" end')"
+fi
+
+jq -n --arg level "$level" --arg mode "$mode" --arg line "$summary_line" --argjson settings "$SETTINGS" \
   --argjson net_up "$net_up" --argjson writes "$writes_open" --argjson wallet "$wallet" \
   --argjson account "$account" --argjson proof "$proof" --argjson can_trade "$can_trade" --arg trade_why "$trade_why" \
   --argjson problems "$problems" --argjson warnings "$warnings" --arg name "$STAGING_NAME" --argjson chain "$STAGING_CHAIN_ID" '
   {ok: true, level: $level, summary: $line, check: $mode,
    network: {name: $name, chain_id: $chain, answers: $net_up, writes_open: $writes},
-   wallet: $wallet, account: $account, proof: $proof,
+   wallet: $wallet, account: $account, proof: $proof, settings: $settings,
    capabilities: [
      {name: "read markets and prices", can: $net_up},
      {name: "read any account", can: $net_up},

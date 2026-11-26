@@ -127,6 +127,17 @@ setting() {
   if profile_exists; then jq -r --arg k "$1" --arg d "$d" '.settings[$k] // $d' "$PROFILE"; else echo "$d"; fi
 }
 
+# settings_json: the trading settings with defaults filled in, and the same in plain words.
+settings_json() {
+  jq -n --arg a "$(setting approval)" --arg b "$(setting market_band_pct)" --arg t "$(setting default_ttl)" '
+    def words: capture("^(?<n>[0-9]+)(?<u>[smhd])$") as $c
+      | ({s: "second", m: "minute", h: "hour", d: "day"}[$c.u]) as $w
+      | "\($c.n) \($w)\(if $c.n == "1" then "" else "s" end)";
+    {approval: $a, market_band_pct: ($b | tonumber), default_ttl: $t,
+     in_words: ((if $a == "ask" then "asks before every trade" else "trades without asking" end)
+                + " · market orders within \($b)% of the price · limit orders rest \($t | words)")}'
+}
+
 # bc_int EXPR: evaluate an integer expression with bc.
 bc_int() { echo "scale=0; $1" | bc | tr -d '\\\n'; }
 

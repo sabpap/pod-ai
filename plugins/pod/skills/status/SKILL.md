@@ -29,10 +29,11 @@ Use the full check when the user asks. Use `--quick` when another pod skill only
 
 ## What to tell the user
 
-1. **The `summary` line**, as given. For example: `pod: ready to trade · 0x035A…Da70 · value $99.9967 · 1 position · 0 orders`. "Value" is the account value: cash plus the unrealized profit or loss of open positions. It is the answer to "how much do I have". Cash alone is not: opening a perp only holds part of the cash as collateral, so cash barely moves.
+1. **The `summary` line**, as given. For example: `pod: ready to trade · 0x035A…Da70 · value $99.9967 · 1 position · 0 orders · asks before trading`. "Value" is the account value: cash plus the unrealized profit or loss of open positions. It is the answer to "how much do I have". Cash alone is not: opening a perp only holds part of the cash as collateral, so cash barely moves.
 2. **Each entry in `problems`**: the `error`, then its `fix`, in plain words.
 3. **Each entry in `warnings`.**
-4. **Capabilities**, only when the user asks what the agent can do, or when trading is not possible: list `capabilities` as can / cannot, with `why` for each "cannot".
+4. **The trading settings**, from `settings.in_words`, e.g. "asks before every trade · market orders within 2% of the price · limit orders rest 1 day". They are changed with `/pod:settings`.
+5. **Capabilities**, only when the user asks what the agent can do, or when trading is not possible: list `capabilities` as can / cannot, with `why` for each "cannot".
 
 Keep it to a few lines. Do not dump the JSON.
 
@@ -47,6 +48,7 @@ Keep it to a few lines. Do not dump the JSON.
 | `account` | Account value (cash plus unrealized profit or loss), cash, unrealized profit or loss and withdrawable cash, in USD; open positions and orders; `frozen`. Status does not list each position, its margin or its liquidation price |
 | `proof.test_transaction` | The last test transaction from setup: `passed` or `failed`, with its time |
 | `proof.last_send` | The latest real send through the plugin: accepted (`ok: true`), or refused with `lasting: true` (region block, blacklist, frozen account) or `lasting: false` (passing errors such as a timeout) |
+| `settings` | `approval` (ask or auto), `market_band_pct`, `default_ttl`, and `in_words`; defaults filled in |
 
 A refusal with `lasting: true` puts the level at `problem` until a later send is accepted or a test passes. A passing refusal changes nothing.
 

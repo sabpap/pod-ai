@@ -67,9 +67,10 @@ account=$(jq -n --arg cash "$(human "$CASH")" --arg w "$(human "$WITHDRAWABLE")"
 
 summary() {   # summary LEVEL TEST_JSON NOTE
   jq -n --arg level "$1" --argjson test "$2" --arg note "$3" --arg addr "$ADDR" \
-    --argjson wallet "$(echo "$addr_json" | jq '{type}')" --argjson net "$net" --argjson acct "$account" --arg path "$PROFILE" '
+    --argjson wallet "$(echo "$addr_json" | jq '{type}')" --argjson net "$net" --argjson acct "$account" --arg path "$PROFILE" \
+    --argjson settings "$(settings_json)" '
     {ok: true, level: $level, network: $net.network, writes_open: $net.writes_open,
-     address: $addr, wallet: $wallet.type, account: $acct, test_transaction: $test, profile: $path}
+     address: $addr, wallet: $wallet.type, account: $acct, test_transaction: $test, settings: $settings, profile: $path}
     + (if $note == "" then {} else {note: $note} end)'
 }
 

@@ -52,6 +52,7 @@ case "$cmd" in
                 env_var: (if $t == "env" then $r else null end),
                 address: $a},
        connected_at: $at,
+       settings: {approval: "ask", market_band_pct: "2", default_ttl: "1d"},
        test_transaction: null}' | profile_write
     jq '{ok: true, saved: true} + .' "$PROFILE"
     ;;
@@ -65,8 +66,7 @@ case "$cmd" in
     ;;
 
   settings)
-    jq -n --arg a "$(setting approval)" --arg b "$(setting market_band_pct)" --arg t "$(setting default_ttl)" \
-      '{ok: true, settings: {approval: $a, market_band_pct: ($b | tonumber), default_ttl: $t}}'
+    settings_json | jq '{ok: true, settings: .}'
     ;;
 
   set)

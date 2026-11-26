@@ -27,13 +27,14 @@ check "no profile at start"       '.connected == false'                   "$S/pr
 check "unset variable refused"    '.ok == false and .step == "wallet"'    "$S/setup.sh" --env SMOKE_NOT_SET
 check "bad key refused"           '.ok == false and .step == "wallet"'    env SMOKE_BAD=xyz "$S/setup.sh" --env SMOKE_BAD
 check "missing keystore refused"  '.ok == false and .step == "wallet"'    "$S/setup.sh" --keystore smoke-no-such-wallet
-check "unfunded key is read-only" '.ok and .level == "connected, read-only"' "$S/setup.sh" --env SMOKE_KEY
+check "unfunded key is read-only" '.ok and .level == "connected, read-only" and (.settings.in_words | test("asks before every trade"))' "$S/setup.sh" --env SMOKE_KEY
 check "profile holds no key"      '.wallet.env_var == "SMOKE_KEY"'        "$S/profile.sh" show
 if grep -q "${SMOKE_KEY#0x}" "$POD_PLUGIN_HOME/profile.json"; then failed=$((failed+1)); echo "FAIL key found in profile"; else pass=$((pass+1)); echo "ok   key not in profile file"; fi
 check "unfunded test refused"     '.ok == false and .step == "test"'      "$S/test-transaction.sh" --dry-run
 
 # Status, with the same unfunded throwaway wallet
 check "status: unfunded is read-only"  '.level == "connected, read-only" and (.warnings | length) == 1' "$S/status.sh" --quick
+check "status: shows settings"         '.settings.approval == "ask" and .settings.market_band_pct == 2 and (.summary | endswith("asks before trading"))' "$S/status.sh" --quick
 check "status: full check signs"       '.check == "full" and .wallet.signs == true' "$S/status.sh"
 check "status: cannot trade"           '[.capabilities[] | select(.name == "trade with this wallet")][0].can == false' "$S/status.sh" --quick
 check "status: missing variable"       '.level == "problem" and .problems[0].check == "wallet"' env -u SMOKE_KEY "$S/status.sh" --quick
@@ -75,7 +76,10 @@ check "account: bad order status"  '.ok == false' "$S/account.sh" orders "$DEV" 
 check "settings: defaults"         '.settings.approval == "ask" and .settings.market_band_pct == 2 and .settings.default_ttl == "1d"' "$S/profile.sh" settings
 check "settings: bad approval"     '.ok == false' "$S/profile.sh" set approval maybe
 check "settings: band too wide"    '.ok == false' "$S/profile.sh" set market_band_pct 25
-check "settings: set resting time" '.settings.default_ttl == "1h"' "$S/profile.sh" set default_ttl 1h
+check "settings: set resting time" '.settings.default_ttl == "1h" and (.settings.in_words | test("rest 1 hour"))' "$S/profile.sh" set default_ttl 1h
+check "settings: auto in words"    '.settings.in_words | startswith("trades without asking")' "$S/profile.sh" set approval auto
+check "status: shows auto"         '.summary | endswith("trades without asking")' "$S/status.sh" --quick
+"$S/profile.sh" set approval ask >/dev/null
 "$S/profile.sh" set default_ttl 1d >/dev/null
 check "trade: plan rounds safe"    '.ok and .needs_approval and .preview.price == "75.03" and .preview.size == "0.012345" and (.notes | length) >= 2' "$S/trade.sh" buy nvda 0.0123456789 --price 75.034
 check "trade: sell rounds up"      '.preview.price == "75.04"' "$S/trade.sh" sell nvda 0.001 --price 75.031
@@ -97,7 +101,8 @@ check "trade: cancel unknown"      '.ok == false' "$S/trade.sh" cancel 0x0000000
 
 check "disconnect"                '.disconnected'                         "$S/profile.sh" delete
 check "trade: no wallet"          '.ok == false and (.fix | test("setup"))' "$S/trade.sh" buy nvda 1 --price 1
-check "status: not set up"        '.level == "not set up" and .wallet == null' "$S/status.sh" --quick
+check "status: not set up"        '.level == "not set up" and .wallet == null and .settings.approval == "ask"' "$S/status.sh" --quick
+check "settings: need a wallet"   '.ok == false' "$S/profile.sh" set approval auto
 check "account: no wallet, no address" '.ok == false and (.fix | test("setup"))' "$S/account.sh"
 check "send refused when not set up" '.ok == false'                       "$S/wallet.sh" send 0x0 "f()"
 

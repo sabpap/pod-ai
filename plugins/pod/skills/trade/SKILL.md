@@ -67,13 +67,7 @@ Run it **in the background** (Bash `run_in_background`), so the user can keep ta
 
 ## Settings
 
-| Setting | Default | Change with |
-|---|---|---|
-| `approval` | `ask` | `profile.sh set approval auto` ("let the agent trade without asking") |
-| `market_band_pct` | `2` | `profile.sh set market_band_pct 1.5` |
-| `default_ttl` | `1d` | `profile.sh set default_ttl 1h` |
-
-Change a setting only when the user asks.
+`approval` (ask or auto), `market_band_pct` (default 2) and `default_ttl` (default 1d) are shown and changed with `/pod:settings`. Change them only when the user asks.
 
 ## When it fails
 

@@ -178,6 +178,7 @@ One reference that every skill points to: network addresses, identifiers, 10^18 
 | `/pod:setup` | 1 | "Connect my wallet", "re-test my wallet", "disconnect" |
 | `/pod:status` | 2 | "Am I connected?", "can you trade?" |
 | `/pod:account` | 3 | "What do I have?", "my open orders", "show 0xABC…'s positions" |
+| `/pod:settings` | 4 | "Stop asking me", "use a 1% band", "what are my settings?" |
 | `/pod:trade` | 4 | "Buy 0.5 NVDA at 180", "cancel all my orders", "set a stop at 170" |
 | `/pod:markets` | 5 | "Top movers", "NVDA order book", "daily bars for gold" |
 | `/pod:live` | 6 | "Watch my positions", "stream the SK Hynix book" |

@@ -77,7 +77,7 @@ Spot orders show the cash a buy needs, or the tokens a sell needs, instead of ma
 | `market_band_pct` | `2` | 0.1 to 20 |
 | `default_ttl` | `1d` | `1m` to `30d` |
 
-Changed with `/pod:setup` ("let the agent trade without asking", "set the market band to 1%").
+Shown by `/pod:status` and at the end of setup, and changed with `/pod:settings` ("let the agent trade without asking", "set the market band to 1%"). Switching `approval` to `auto` needs the user's own yes to a two-option question.
 
 ## Rules the scripts apply
 

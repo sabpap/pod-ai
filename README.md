@@ -26,6 +26,7 @@ Then ask the agent to set it up, for example: "Set up the pod plugin with our de
 | 2 Status | `/pod:status` | Built. Tested read-only; levels checked with a throwaway wallet |
 | 3 Account | `/pod:account` | Built. Eight views, tested on the dev wallet and on a busy market-maker account |
 | 4 Trading | `/pod:trade` | Built. Every action tested end to end on staging with the dev wallet |
+| Settings | `/pod:settings` | Built. Approval (ask or auto), market band, default resting time; shown by status and setup |
 | 5 Market data | `/pod:markets` | Not yet |
 | 6 Live updates | `/pod:live` | Not yet |
 | 7 Network activity | `/pod:network` | Not yet |
