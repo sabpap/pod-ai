@@ -1,21 +1,21 @@
 # Section 2: Status
 
-*Spec, 2026-11-26. Decided in the interview of 2026-11-26. Part of [01-plugin-design.md](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/specs/01-plugin-design.md).*
+*Spec, 2026-11-26. Decided in the interview of 2026-11-26. Branch `4-cli`: this section now runs as `pod` commands; see [08-cli-and-hook.md](08-cli-and-hook.md) for the command map and the approval hook. The decisions and findings below are unchanged.*
 
-Status answers one question: **can the AI act on pod right now, and if not, why not?** It also tells the agent what it can and cannot do. It runs on demand: when the user or agent asks with `/pod:status`, or when another pod skill calls it. There is no session-start hook.
+Status answers one question: **can the AI act on pod right now, and if not, why not?** It also tells the agent what it can and cannot do. It runs on demand: when the user or agent asks with `pod status`, or when an agent runs it before other work. There is no session-start hook.
 
 ## Decisions
 
 | # | Topic | Decision |
 |---|---|---|
 | T1 | At session start | **Nothing runs.** No session-start hook (decided 2026-11-26): a user-scope plugin would fire it in every session on the machine, in every project |
-| T2 | When status runs | On demand only: `/pod:status`, or another pod skill running `status.sh` |
+| T2 | When status runs | On demand only: `pod status`, or an agent running `pod status --quick` before other work |
 | T3 | Wallet connected and funded, but the test transaction was denied or never run | Level **connected, untested**. Trading is allowed, with a warning. The first real accepted send then counts as the proof |
 | T4 | How long a passed test counts | **Until a send fails** for a lasting reason (region block, blacklist, frozen account). Then the level drops to **problem** |
 | T5 | Check before each trading action | **None.** The trading section sends and relies on pod's own error; the send result updates status (T4) |
-| T6 | Capabilities | Status lists **every capability** with yes or no and why, including what the plugin does not do |
-| T7 | Installed but not set up | Status says "not set up" and points to `/pod:setup`. Nothing is shown unless status is asked for |
-| T8 | `/pod:status` | A **full check** by default: the quick check plus signing a test message (decision D1 in the design). `status.sh --quick` skips the signing, for skills that only need the facts |
+| T6 | Capabilities | Status lists **every capability** with yes or no and why, including what pod does not do |
+| T7 | Installed but not set up | Status says "not set up" and points to `pod setup`. Nothing is shown unless status is asked for |
+| T8 | `pod status` | A **full check** by default: the quick check plus signing a test message (decision D1 in the design). `pod status --quick` skips the signing, for an agent that only needs the facts |
 
 ## Levels
 
@@ -60,9 +60,9 @@ The network calls run in parallel, so the quick check takes about one second. If
     {"name": "read any account", "can": true},
     {"name": "follow live updates", "can": true, "note": "needs a listener kept open by the harness"},
     {"name": "trade with this wallet", "can": true},
-    {"name": "deposit, withdraw, transfer", "can": false, "why": "not part of this plugin"},
-    {"name": "bot keys (delegation)", "can": false, "why": "not part of this plugin"},
-    {"name": "recover a frozen account", "can": false, "why": "not part of this plugin"}
+    {"name": "deposit, withdraw, transfer", "can": false, "why": "not part of pod"},
+    {"name": "bot keys (delegation)", "can": false, "why": "not part of pod"},
+    {"name": "recover a frozen account", "can": false, "why": "not part of pod"}
   ],
   "problems": [],
   "warnings": []
@@ -87,17 +87,17 @@ A later passed test or accepted send clears a lasting failure.
 
 | File | Job |
 |---|---|
-| `scripts/status.sh [--quick]` | Runs the checks and prints the status object. Full check by default; `--quick` skips signing |
-| `scripts/wallet.sh send` | Also writes `last_send` (above) |
-| `skills/status/SKILL.md` | `/pod:status`: run the full check and explain it in plain words |
+| `pod status [--quick]` | Runs the checks and prints the status object. Full check by default; `--quick` skips signing |
+| `cli/libexec/wallet.sh send` | Also writes `last_send` (above) |
+| `pod status --help` | The manual: what each level and field means |
 
 ## Not part of status
 
-Fixing problems (each problem names its fix, usually `/pod:setup`), checks before trades (T5), a session-start hook (T1), a permanent status-line indicator.
+Fixing problems (each problem names its fix, usually `pod setup`), checks before trades (T5), a session-start hook (T1), a permanent status-line indicator.
 
 ## Implementation notes (2026-11-26)
 
-Built in [plugins/pod](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/plugins/pod/): `scripts/status.sh`, the `/pod:status` skill, send recording in `wallet.sh` (helpers `send_failure_kind` and `record_send` in `lib.sh`). Setup now reports the same level names as status: its "set up" became "connected, untested".
+Built in [cli](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/cli/): `pod status` (`cli/libexec/status.sh`), the `/pod:status` skill, send recording in `wallet.sh` (helpers `send_failure_kind` and `record_send` in `lib.sh`). Setup now reports the same level names as status: its "set up" became "connected, untested".
 
 | Finding | Effect |
 |---|---|
@@ -114,4 +114,4 @@ After the dev wallet opened a small NVDA perp, the line still said "$100 cash": 
 
 ## Change: settings shown (2026-11-26)
 
-Status always reports the trading settings (`approval`, `market_band_pct`, `default_ttl`, with defaults filled in, and the same `in_words`), and its summary line ends with "asks before trading" or "trades without asking". Setup's final answer reports them too, and setup now saves the defaults into the profile. They are changed with the new `/pod:settings` skill. They are not in the Account section, because account reads any address while the settings belong to this machine's connected wallet. Version 0.4.1.
+Status always reports the trading settings (`approval`, `market_band_pct`, `default_ttl`, with defaults filled in, and the same `in_words`), and its summary line ends with "asks before trading" or "trades without asking". Setup's final answer reports them too, and setup now saves the defaults into the profile. They are changed with the new `/pod:settings` skill (in branch `4-cli`: `pod settings`). They are not in the Account section, because account reads any address while the settings belong to this machine's connected wallet. Version 0.4.1.

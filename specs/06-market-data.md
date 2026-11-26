@@ -1,6 +1,6 @@
 # Section 5: Market data
 
-*Spec, 2026-11-26. Decided in the interview of 2026-11-26. Part of [01-plugin-design.md](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/specs/01-plugin-design.md).*
+*Spec, 2026-11-26. Decided in the interview of 2026-11-26. Branch `4-cli`: this section now runs as `pod` commands; see [08-cli-and-hook.md](08-cli-and-hook.md) for the command map and the approval hook. The decisions and findings below are unchanged.*
 
 Market data answers **"what is traded on pod, at what price, how deep is the book, and how did prices move?"** It only reads; no wallet is needed.
 
@@ -11,13 +11,13 @@ Market data answers **"what is traded on pod, at what price, how deep is the boo
 | M1 | The headline price | **The mark price on perps, the last traded price on spot** (spot has no mark). Last traded, mark and oracle are always shown beside it, and the answer says which one leads. Trading starts market orders from the same price |
 | M2 | Cost of a size | **Yes, when a size is given**: `book MARKET --size N` says what a market order of that size would clear at now, its value and fee, how far from the mid, whether the book is deep enough, and whether it lies inside the default market-order band |
 | M3 | Computed numbers | **All four**: spread and mid; funding as % per window and per year, with who pays whom; the mark-vs-oracle gap; a summary over price bars (change, high, low, volume, value). Marked as computed, like Account (A2) |
-| M4 | How data is read | A script, `markets.sh`, like `account.sh`: plain numbers, market names, paging handled, `--raw` for pod's answers unchanged |
+| M4 | How data is read | A script, `pod markets`, like `pod account`: plain numbers, market names, paging handled, `--raw` for pod's answers unchanged |
 | M5 | Company information | **Not included.** Descriptions and real-exchange hours live in exotic's own backend, not in pod's API |
 
 ## Usage
 
 ```
-markets.sh [VIEW] [MARKET | QUERY] [options]
+pod markets [VIEW] [MARKET | QUERY] [options]
 ```
 
 | View | Answers | Pod calls | Options |
@@ -56,7 +56,7 @@ Pod clears each market **once per round at one price for everyone** (checked: ev
 
 ## Implementation notes (2026-11-26)
 
-Built in [plugins/pod](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/plugins/pod/): `scripts/markets.sh`, `fetch_to` moved into `lib.sh` (shared with `account.sh`), `us_time_ms` in `pod.jq`, and the `/pod:markets` skill. Version 0.5.0.
+Built in [cli](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/cli/): `pod markets` (`cli/libexec/markets.sh`), `fetch_to` moved into `lib.sh` (shared with `pod account`), `us_time_ms` in `pod.jq`, and the `/pod:markets` skill (in branch `4-cli`: the manual `pod markets --help` and the one `pod` skill). Version 0.5.0.
 
 An independent review found the never-cleared market failing the whole market view and a zero mark shown as the headline price; both fixed before the first commit.
 

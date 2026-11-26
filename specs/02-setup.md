@@ -1,24 +1,24 @@
 # Section 1: Setup
 
-*Spec, 2026-11-26. Decided in the interview of 2026-11-26. Part of [01-plugin-design.md](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/specs/01-plugin-design.md).*
+*Spec, 2026-11-26. Decided in the interview of 2026-11-26. Branch `4-cli`: this section now runs as `pod` commands; see [08-cli-and-hook.md](08-cli-and-hook.md) for the command map and the approval hook. The decisions and findings below are unchanged.*
 
-Setup connects the `pod` plugin to pod staging and to one funded wallet, proves the wallet can really send, and saves the result as the profile every other section reads.
+Setup connects pod to pod staging and to one funded wallet, proves the wallet can really send, and saves the result as the profile every other section reads.
 
 ## Decisions
 
 | # | Topic | Decision |
 |---|---|---|
-| S1 | How setup runs | A skill (the manual) plus small scripts shipped in the plugin for the fiddly parts: reading the wallet, signing, the test transaction |
+| S1 | How setup runs | A manual (a skill in the hybrid; `pod setup --help` in branch `4-cli`) plus small scripts for the fiddly parts: reading the wallet, signing, the test transaction |
 | S2 | Script language | Bash, with Foundry's `cast` for encoding and signing, `curl` for pod's API, `jq` for JSON |
 | S3 | Wallet types | Two: a **Foundry keystore** whose password is in the macOS Keychain (normal path), and a **private key in an environment variable** (fallback for servers and CI) |
 | S4 | Private key source | Environment variable only. The profile stores the variable's name, never the key |
 | S5 | Keystore without a Keychain password | Setup stops and shows the command that stores the password. An agent never sees or types a password |
 | S6 | Profile location | User level: `~/.config/pod-plugin/profile.json`. One profile at a time, shared by every project and session on the machine |
-| S7 | Who starts setup | The user with `/pod:setup`, or an agent itself by naming the wallet, so an autonomous agent can connect without a human |
+| S7 | Who starts setup | The user with `pod setup`, or an agent itself by naming the wallet, so an autonomous agent can connect without a human |
 | S8 | Test transaction | Setup asks the user to **approve or deny** it: the AskUserQuestion tool with two options only, "Approve" and "Deny"; anything but Approve sends nothing. A `--yes` flag skips the question for autonomous agents |
 | S9 | Networks | Pod staging only. Every script checks the chain id is 129302 before sending and refuses anything else |
 | S10 | Missing tools | Setup checks for `cast`, `jq` and `curl` first and stops with the install command (`brew install foundry jq`) |
-| S11 | Plugin name | `pod`, so the commands are `/pod:setup`, `/pod:status` and so on |
+| S11 | Plugin name | `pod`, so the commands are `pod setup`, `pod status` and so on |
 | S12 | Distribution | The pod-ai folder becomes a git repo that is also a local plugin marketplace, installed with `/plugin` |
 
 ## What setup does, step by step
@@ -100,17 +100,17 @@ To use another wallet: disconnect, then set up again.
 
 ## Scripts
 
-All in the plugin's `scripts/` folder, Bash, each printing one JSON object so the agent can read the result.
+All in `cli/libexec/`, run through the `pod` command, Bash, each printing one JSON object so the agent can read the result.
 
 | Script | Job |
 |---|---|
-| `check-tools.sh` | Steps 1: tools present, with install command if not |
-| `check-network.sh` | Step 2 |
-| `list-wallets.sh` | Step 3: keystores found, and whether each has a Keychain password |
+| `pod setup tools` | Steps 1: tools present, with install command if not |
+| `pod setup network` | Step 2 |
+| `pod setup wallets` | Step 3: keystores found, and whether each has a Keychain password |
 | `wallet.sh` | The wallet contract used by every section: `address`, `type`, `sign-message`, `sign-tx`. Hides whether the key comes from a keystore or a variable |
 | `profile.sh` | Read, write, show and delete the profile |
-| `test-transaction.sh` | Step 8, with `--yes` and `--dry-run` |
-| `setup.sh` | Runs steps 1 to 9 in order, for an agent that wants it done in one call |
+| `pod setup test` | Step 8, with `--yes` and `--dry-run` |
+| `pod setup` | Runs steps 1 to 9 in order, for an agent that wants it done in one call |
 
 ## Error messages
 
@@ -130,16 +130,16 @@ Every failure names the step, says what is wrong in plain words, and gives the f
 
 ## Implementation notes (2026-11-26)
 
-Built in [plugins/pod](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/plugins/pod/): the `/pod:setup` skill, the scripts listed above plus `lib.sh` (shared helpers), and [tests/smoke.sh](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/plugins/pod/tests/smoke.sh) (13 read-only checks, all passing). The plugin validates with `claude plugin validate`.
+Built in [cli](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/cli/): the `/pod:setup` skill (in branch `4-cli`: `pod setup --help`), the scripts listed above plus `lib.sh` (shared helpers), and [tests/smoke.sh](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/cli/tests/smoke.sh) (13 read-only checks, all passing). The plugin validates with `claude plugin validate`.
 
 What the build changed or found:
 
 | Finding | Effect |
 |---|---|
-| Foundry keystores do not store the address in clear | `list-wallets.sh` shows the address as null; `wallet.sh address` decrypts the keystore with its Keychain password to get it |
+| Foundry keystores do not store the address in clear | `pod setup wallets` shows the address as null; `wallet.sh address` decrypts the keystore with its Keychain password to get it |
 | `cast` cannot read a raw private key from an environment variable | For the env-variable wallet, the key is passed to `cast` as an argument, so this user's own processes can see it while `cast` runs. Acceptable for the server/CI fallback; the keystore path has no such exposure |
 | An order joins the auction round at its deadline (`included_batch` = `deadline` on live orders) | The test order uses a 5-second deadline instead of exotic-dev's 60 seconds, so the test takes about 15 seconds. Set with `POD_TEST_LAG_S` |
-| A Claude agent cannot answer an interactive prompt inside a script | "Ask first" (S8) works by setup stopping with `needs_approval` and the plan; the agent asks the user to approve or deny, and runs `test-transaction.sh --yes` only on approve |
+| A Claude agent cannot answer an interactive prompt inside a script | "Ask first" (S8) works by setup stopping with `needs_approval` and the plan; the agent asks the user to approve or deny, and runs `pod setup test --yes` only on approve |
 | The test price is half the oracle price, not half the best bid | The oracle is always present; a maker-only buy there cannot cross a real ask, and if it would, pod refuses it rather than trade |
 | Status is Section 2, not built yet | Setup's final answer carries the level and account summary itself |
 
@@ -150,7 +150,7 @@ The `pod-ai-user` session installed and set up the plugin from nothing, given on
 | Friction | Cause | Response |
 |---|---|---|
 | The agent could add the marketplace but not run `claude plugin install`; the user had to | Claude Code's auto mode blocks an agent from installing plugins | Installing is a person's job. The README says so |
-| `/pod:setup` was missing until a new session started | Skills load at session start | The README says to start a new session after installing |
+| `pod setup` was missing until a new session started | Skills load at session start | The README says to start a new session after installing |
 | The agent ran the scripts directly in the first session | The skill was not loaded yet | No change: the scripts work on their own |
 
 ## Not part of setup

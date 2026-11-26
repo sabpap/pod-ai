@@ -1,6 +1,6 @@
 # Section 3: Account
 
-*Spec, 2026-11-26. Decided in the interview of 2026-11-26. Part of [01-plugin-design.md](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/specs/01-plugin-design.md).*
+*Spec, 2026-11-26. Decided in the interview of 2026-11-26. Branch `4-cli`: this section now runs as `pod` commands; see [08-cli-and-hook.md](08-cli-and-hook.md) for the command map and the approval hook. The decisions and findings below are unchanged.*
 
 Account answers **"what does this account hold, what is it worth, and what has it done?"** for the connected wallet by default, or for any address. It only reads; no key is needed.
 
@@ -8,22 +8,22 @@ Account answers **"what does this account hold, what is it worth, and what has i
 
 | # | Topic | Decision |
 |---|---|---|
-| A1 | How data is read | A script, `account.sh`, calls pod's REST API and returns **plain numbers**: 10^18 amounts and hex turned into dollars and sizes, microseconds into dates, market ids into names, paging handled. `--raw` returns pod's answer unchanged |
+| A1 | How data is read | A script, `pod account`, calls pod's REST API and returns **plain numbers**: 10^18 amounts and hex turned into dollars and sizes, microseconds into dates, market ids into names, paging handled. `--raw` returns pod's answer unchanged |
 | A2 | Numbers pod does not serve | **A few, computed and marked as computed**: per position, return on margin and distance to liquidation; per account, margin in use, free margin and real leverage. No advice or signals |
 | A3 | Names for other accounts | **No.** Other accounts are named by their address |
 | A4 | History | **Newest 50 entries** by default; `--since` for a time window and `--limit` for more, up to 5,000; paging handled by the script |
 | A5 | Results over a period | **Yes**, a `results` view: plain totals over a window, marked as computed. No ratings, win rates or advice |
-| A6 | Skills | **One skill**, `/pod:account`, with one view per question |
+| A6 | Skills | **One command**, `pod account`, with one view per question (one skill in the hybrid) |
 
-A raw comparison version (one skill, no scripts) is noted in [todo-raw-plugin.md](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/specs/todo-raw-plugin.md).
+A raw comparison version (one skill, no scripts) is branch `1-raw`.
 
 ## Usage
 
 ```
-account.sh VIEW [ADDRESS] [--since 7d|24h|30m|2026-11-01] [--limit N] [--status S] [--raw]
+pod account VIEW [ADDRESS] [--since 7d|24h|30m|2026-11-01] [--limit N] [--status S] [--raw]
 ```
 
-`ADDRESS` defaults to the connected wallet. With no wallet connected and no address, the script stops with "name an address, or connect a wallet with /pod:setup".
+`ADDRESS` defaults to the connected wallet. With no wallet connected and no address, the script stops with "name an address, or connect a wallet with pod setup".
 
 ## Views
 
@@ -84,7 +84,7 @@ One JSON object:
  "data": [ ... ], "count": 1, "more": false, "computed": ["return_on_margin_pct", "liquidation_distance_pct"]}
 ```
 
-`more` is true when more history exists beyond `--limit`. `computed` names the fields the plugin worked out rather than read from pod.
+`more` is true when more history exists beyond `--limit`. `computed` names the fields pod worked out rather than read from pod.
 
 ## Facts found while specifying (live, 2026-11-26)
 
@@ -95,7 +95,7 @@ One JSON object:
 
 ## Implementation notes (2026-11-26)
 
-Built in [plugins/pod](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/plugins/pod/): `scripts/account.sh`, `scripts/pod.jq` (exact conversion of pod's numbers on digit strings, no floating point), `since_us` in `lib.sh`, and the `/pod:account` skill. Version 0.3.0.
+Built in [cli](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/cli/): `pod account` (`cli/libexec/account.sh`), `cli/libexec/pod.jq` (exact conversion of pod's numbers on digit strings, no floating point), `since_us` in `lib.sh`, and the `/pod:account` skill (in branch `4-cli`: the manual `pod account --help` and the one `pod` skill). Version 0.3.0.
 
 | Finding | Effect |
 |---|---|

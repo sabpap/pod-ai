@@ -1,21 +1,21 @@
 # Section 4: Trading
 
-*Spec, 2026-11-26. Decided in the interview of 2026-11-26. Part of [01-plugin-design.md](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/specs/01-plugin-design.md).*
+*Spec, 2026-11-26. Decided in the interview of 2026-11-26. Branch `4-cli`: this section now runs as `pod` commands; see [08-cli-and-hook.md](08-cli-and-hook.md) for the command map and the approval hook. The decisions and findings below are unchanged.*
 
-Trading places, changes and cancels orders and stop-loss / take-profit triggers for the **connected wallet**, on pod staging only. It is the first section that sends transactions. How the agent decides what to trade is the user's business; the plugin makes each action correct, previewed and traceable.
+Trading places, changes and cancels orders and stop-loss / take-profit triggers for the **connected wallet**, on pod staging only. It is the first section that sends transactions. How the agent decides what to trade is the user's business; pod makes each action correct, previewed and traceable.
 
 ## Decisions
 
 | # | Topic | Decision |
 |---|---|---|
-| TR1 | Approval | A profile setting, `approval`: **`ask`** (default) shows a preview and an Approve / Deny question before every send; **`auto`** sends without asking, for autonomous agents. Changed with `/pod:setup` |
+| TR1 | Approval | A profile setting, `approval`: **`ask`** (default) shows a preview and an Approve / Deny question before every send; **`auto`** sends without asking, for autonomous agents. Changed with `pod setup` |
 | TR2 | Prices and sizes between the market's steps | **Round to the safe side and say so**: a buy price goes down, a sell price up, a size down. The preview shows each change, e.g. "151.034 → 151.03" |
 | TR3 | Worst price for a market order | **2% from the mark price** unless the order names its own cap or band. The default band is a profile setting, `market_band_pct` |
 | TR4 | Reporting the outcome | **"Sent" at once, the result from the background**: the agent reports the send straight away, keeps following the order, and reports filled / resting / refused when the auction round settles. The user can keep talking meanwhile |
 | TR5 | Preview | **Cost and margin**: market, side, size, price after rounding, worst price (market orders), order value, fee, margin needed, free margin after |
 | TR6 | How long a limit order rests | **1 day** by default; any order can name its own time (`10m`, `1h`, `7d`). A profile setting, `default_ttl` |
 | TR7 | Shortcuts | **Close a position** (all or part, one reduce-only order) and **cancel all orders** (all, or one market's, in one batch). No bracket orders and no free-form batches for now |
-| TR8 | Sizing by money | Added 2026-11-26 after a tester bought "0.01 of each" of seven markets and gold (about $3,570 a unit) became 60% of the exposure. **`--usd AMOUNT` instead of a size** on buy and sell: a limit order is sized at its price, a market order at the current price, rounded down to the size step, with a note. Market-order previews also show the value at the current price beside the worst case. The skill says a size is in units, not dollars |
+| TR8 | Sizing by money | Added 2026-11-26 after a tester bought "0.01 of each" of seven markets and gold (about $3,570 a unit) became 60% of the exposure. **`--usd AMOUNT` instead of a size** on buy and sell: a limit order is sized at its price, a market order at the current price, rounded down to the size step, with a note. Market-order previews also show the value at the current price beside the worst case. The manual (`pod trade --help`) says a size is in units, not dollars |
 | T5 (status) | Check before each send | None: pod's own error is the signal, and every send's result is recorded for status |
 
 ## Actions
@@ -47,14 +47,14 @@ flowchart TD
   F --> O["6 Agent: 'Filled at $151.03' / 'Resting in the book' / 'Refused: not enough margin'"]
 ```
 
-1. **Plan.** `trade.sh buy NVDA 0.01 --price 151.034` reads the market's rules, rounds (TR2), works out the deadline, resting time and worst price, builds the preview (TR5), and saves the plan under a **plan id**. Nothing is signed. Plans expire after 2 minutes, because prices move.
+1. **Plan.** `pod trade buy NVDA 0.01 --price 151.034` reads the market's rules, rounds (TR2), works out the deadline, resting time and worst price, builds the preview (TR5), and saves the plan under a **plan id**. Nothing is signed. Plans expire after 2 minutes, because prices move.
 2. **Approval.** With `approval: ask`, the agent shows the preview and asks Approve / Deny (two options only; anything else is Deny). With `auto`, it goes straight on.
-3. **Send.** `trade.sh send PLAN_ID` sends exactly the approved plan: it signs through `wallet.sh`, sends, and returns as soon as pod has accepted it, with the transaction hash and order id. The send's result is recorded for status.
+3. **Send.** `pod trade send PLAN_ID` sends exactly the approved plan: it signs through `wallet.sh`, sends, and returns as soon as pod has accepted it, with the transaction hash and order id. The send's result is recorded for status.
 4. **"Sent."** The agent tells the user at once.
-5. **Follow.** `trade.sh follow ORDER_ID` waits for the order's auction round and prints the outcome. In Claude Code the agent runs it in the background and is told when it ends; other harnesses run it as a second step.
+5. **Follow.** `pod trade follow ORDER_ID` waits for the order's auction round and prints the outcome. In Claude Code the agent runs it in the background and is told when it ends; other harnesses run it as a second step.
 6. **Result.** The agent reports filled (with average price and fee), partly filled, resting, or refused with pod's reason.
 
-The plan id ties the send to the preview: what was approved is exactly what is sent. In `auto` mode, `trade.sh buy … --send` plans and sends in one call.
+The plan id ties the send to the preview: what was approved is exactly what is sent. In `auto` mode, `pod trade buy … --send` plans and sends in one call.
 
 ## Preview (TR5)
 
@@ -78,7 +78,7 @@ Spot orders show the cash a buy needs, or the tokens a sell needs, instead of ma
 | `market_band_pct` | `2` | 0.1 to 20 |
 | `default_ttl` | `1d` | `1m` to `30d` |
 
-Shown by `/pod:status` and at the end of setup, and changed with `/pod:settings` ("let the agent trade without asking", "set the market band to 1%"). Switching `approval` to `auto` needs the user's own yes to a two-option question.
+Shown by `pod status` and at the end of setup, and changed with `pod settings` ("let the agent trade without asking", "set the market band to 1%"). Switching `approval` to `auto` needs the user's own yes to a two-option question.
 
 ## Rules the scripts apply
 
@@ -101,7 +101,7 @@ Shown by `/pod:status` and at the end of setup, and changed with `/pod:settings`
 
 ## Implementation notes (2026-11-26)
 
-Built in [plugins/pod](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/plugins/pod/): `scripts/trade.sh`, the `/pod:trade` skill, the settings in `profile.sh` (`settings`, `set`) and `/pod:setup`, `to_wei`, `duration_s` and `setting` in `lib.sh`, and `find_market` in `pod.jq`. Version 0.4.0.
+Built in [cli](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/cli/): `pod trade` (`cli/libexec/trade.sh`), the `/pod:trade` skill (in branch `4-cli`: the manual `pod trade --help` and the one `pod` skill), the settings in `profile.sh` (`settings`, `set`) and `pod setup`, `to_wei`, `duration_s` and `setting` in `lib.sh`, and `find_market` in `pod.jq`. Version 0.4.0.
 
 - Plans live in `~/.config/pod-plugin/plans/`, readable only by the user, and are deleted after an hour.
 - The nonce and the deadline are fixed at send time, not at plan time, so an approval that takes a minute still sends a valid order; the order id is therefore known once sent.

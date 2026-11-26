@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # pod-guard: a Claude Code PreToolUse hook that makes Claude Code ask the person before the agent
-# sends from the pod wallet, or switches approval off. Design: specs/02-cli-and-hook.md.
+# sends from the pod wallet, or switches approval off. Design: specs/08-cli-and-hook.md.
 #
 # Reads the PreToolUse JSON on stdin. Prints nothing (no opinion: the normal permission flow goes on),
 # or one hookSpecificOutput object with permissionDecision "ask" or "deny".

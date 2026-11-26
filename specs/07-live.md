@@ -1,6 +1,6 @@
 # Section 6: Live updates
 
-*Spec, 2026-11-26. Decided in the interview of 2026-11-26. Part of [01-plugin-design.md](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/specs/01-plugin-design.md).*
+*Spec, 2026-11-26. Decided in the interview of 2026-11-26. Branch `4-cli`: this section now runs as `pod` commands; see [08-cli-and-hook.md](08-cli-and-hook.md) for the command map and the approval hook. The decisions and findings below are unchanged.*
 
 Live answers **"tell me as it changes"** and **"tell me when this happens"**: a market's price, the book, price bars, an account's orders, positions, triggers and activity, transaction receipts, and the auction rounds. It only reads and never trades.
 
@@ -8,19 +8,19 @@ Live answers **"tell me as it changes"** and **"tell me when this happens"**: a 
 
 | # | Topic | Decision |
 |---|---|---|
-| L1 | Ship a listener? | **Yes** (replaces design decision D4, "manual only"). Claude Code can run a process in the background and wake the agent on its output, so the plugin ships `live.sh`: it subscribes, catches up without gaps, reconnects, and prints one plain-number line per update. The skill still documents pod's protocol for other harnesses |
-| L2 | Conditions | **Yes, simple ones**: `--until "FIELD OP VALUE"` ends the listener and reports the update that matched. One field, one comparison, one value; repeat for "any of these". The agent then acts through the other skills, and a trade still follows the approval setting |
-| L3 | Lifetime | **Until stopped or the session ends.** `--for 2h` sets a limit. `live.sh list` and `live.sh stop ID\|all` manage running listeners |
+| L1 | Ship a listener? | **Yes** (replaces design decision D4, "manual only"). Claude Code can run a process in the background and wake the agent on its output, so the plugin ships `pod live`: it subscribes, catches up without gaps, reconnects, and prints one plain-number line per update. The manual (`pod live --help`) still documents pod's protocol for other harnesses |
+| L2 | Conditions | **Yes, simple ones**: `--until "FIELD OP VALUE"` ends the listener and reports the update that matched. One field, one comparison, one value; repeat for "any of these". The agent then acts through the other commands, and a trade still follows the approval setting |
+| L3 | Lifetime | **Until stopped or the session ends.** `--for 2h` sets a limit. `pod live list` and `pod live stop ID\|all` manage running listeners |
 | L4 | Volume | **Market channels: changes only, at most one line every 30 seconds** (`--every` changes it; `0` prints every update). Account channels print every change. Conditions are tested on every update whatever `--every` says |
 | L5 | Runtime | **Node.js 22 or later**, for its built-in WebSocket: nothing to install on a Mac with Node. Status reports "follow live updates" as unavailable without it |
 
 ## Usage
 
 ```
-live.sh CHANNEL [MARKET... | ADDRESS] [--until "FIELD OP VALUE"]... [--every 30s] [--for 2h]
+pod live CHANNEL [MARKET... | ADDRESS] [--until "FIELD OP VALUE"]... [--every 30s] [--for 2h]
         [--market NAME] [--order ID] [--tx HASH]... [--depth N] [--spot] [--raw]
-live.sh list
-live.sh stop ID|all
+pod live list
+pod live stop ID|all
 ```
 
 | Channel | Pod channel | Follows | Default |
@@ -31,7 +31,7 @@ live.sh stop ID|all
 | `orders` | `pod_orders_v2` | Order events for up to 64 accounts: new, fill, cancel, expire, reject, modify | Every change |
 | `positions` | `pod_positions` | Account value, cash, positions; `--market` for one position (size 0 when none) | Every change; current state first |
 | `triggers` | `pod_triggers` | Armed stop-losses and take-profits | Every change; current list first |
-| `activity` | `pod_activity` | Every account event, with the same plain descriptions as `/pod:account activity` | Every change |
+| `activity` | `pod_activity` | Every account event, with the same plain descriptions as `pod account activity` | Every change |
 | `receipts` | `pod_receipts` | Transaction outcomes; with `--tx` it ends when all have arrived | Every receipt |
 | `rounds` | `newHeads` | Round numbers, counted per window | Every 30 s |
 
@@ -64,16 +64,16 @@ Account channels default to the connected wallet and accept any address.
 
 ## Implementation notes (2026-11-26)
 
-Built in [plugins/pod](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/plugins/pod/): `scripts/live.sh` (arguments, names, accounts, Node check, list and stop), `scripts/live.mjs` (connection, catch-up, reconnects, throttle, conditions, registry), `scripts/live-lib.mjs` (decoding with exact BigInt amounts, conditions, descriptions), and the `/pod:live` skill. Version 0.5.0.
+Built in [cli](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai/cli/): `pod live` (`cli/libexec/live.sh`) (arguments, names, accounts, Node check, list and stop), `cli/libexec/live.mjs` (connection, catch-up, reconnects, throttle, conditions, registry), `cli/libexec/live-lib.mjs` (decoding with exact BigInt amounts, conditions, descriptions), and the `/pod:live` skill (in branch `4-cli`: the manual `pod live --help` and the one `pod` skill). Version 0.5.0.
 
 An independent review found seven problems, all fixed before the first commit: `--raw` with several markets printed only the first (now one throttle per market); `--for` past 24.8 days stopped at once (Node's timer limit; now waited out in steps, and `--for` is capped at 30 days); repeated state pushes were printed twice (now dropped); a refused first subscription printed a notice before the `watching` line and broke later reconnect notices, and a state channel's "not caught up yet" (995) was taken for "too old" (now it waits and asks again); a price of 0 counted as a price.
 
-Tested: 57 offline unit checks (`tests/live-units.mjs`); 10 checks against a fake pod server (`tests/live-reconnect.sh`, Deno) that drops the connection and then closes the stream the way pod does, proving the listener resumes from round 3 and then round 4 with no gap or repeat; 11 smoke checks against staging; and by hand every channel, `list`, `stop`, a receipt that ends the listener, and every refusal.
+Tested: 57 offline unit checks (`cli/tests/live-units.mjs`); 10 checks against a fake pod server (`cli/tests/live-reconnect.sh`, Deno) that drops the connection and then closes the stream the way pod does, proving the listener resumes from round 3 and then round 4 with no gap or repeat; 11 smoke checks against staging; and by hand every channel, `list`, `stop`, a receipt that ends the listener, and every refusal.
 
 ## Changes (2026-11-26, version 0.5.1)
 
-The tester built its own live page in a terminal browser instead of using `live.sh`, subscribed to `pod_positions` without `since`, and saw "subscribed" with no data. The skill had presented `since` as a way to avoid gaps and said state channels send the current state "when given `since`", without saying that without it they send nothing until the account changes. The skill now opens pod's protocol with that rule (read the REST view, take its `timestamp` or `solution_now`, subscribe from it), names a live page or dashboard as a case, and adds the dedupe and reconnect rules `live.sh` follows. Checked on staging: the dev wallet's positions with `since` sent the current state at once; without it, nothing in 3 seconds.
+The tester built its own live page in a terminal browser instead of using `pod live`, subscribed to `pod_positions` without `since`, and saw "subscribed" with no data. The skill had presented `since` as a way to avoid gaps and said state channels send the current state "when given `since`", without saying that without it they send nothing until the account changes. The skill now opens pod's protocol with that rule (read the REST view, take its `timestamp` or `solution_now`, subscribe from it), names a live page or dashboard as a case, and adds the dedupe and reconnect rules `pod live` follows. Checked on staging: the dev wallet's positions with `since` sent the current state at once; without it, nothing in 3 seconds.
 
 ## Not part of Live
 
-Acting on a condition (the agent does that with `/pod:trade`), withdrawals and transfers channels (out of scope), keeping a listener alive after the session ends.
+Acting on a condition (the agent does that with `pod trade`), withdrawals and transfers channels (out of scope), keeping a listener alive after the session ends.
