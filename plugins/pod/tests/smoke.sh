@@ -101,6 +101,11 @@ pid=$("$S/trade.sh" buy nvda 0.001 --price 75 | jq -r .plan_id)
 jq '.expires = 0' "$POD_PLUGIN_HOME/plans/$pid.json" > "$POD_PLUGIN_HOME/plans/x" && mv "$POD_PLUGIN_HOME/plans/x" "$POD_PLUGIN_HOME/plans/$pid.json"
 check "trade: expired plan"        '.ok == false and (.error | test("expired"))' "$S/trade.sh" send "$pid"
 check "trade: follow unsent plan"  '.ok == false' "$S/trade.sh" follow "$pid"
+# A failed nonce lookup must stop the send, not go on with nonce 0. The RPC points at a closed local
+# port, so nothing can be sent whatever happens (and the throwaway key is unfunded).
+pid=$("$S/trade.sh" buy nvda 0.001 --price 75 | jq -r .plan_id)
+check "trade: no nonce, no send"   '.ok == false and (.error | test("next transaction number"))' env POD_TEST_RPC=http://127.0.0.1:9 "$S/trade.sh" send "$pid"
+check "trade: plan still unsent"   '.ok == false and (.error | test("state: planned"))' "$S/trade.sh" follow "$pid"
 check "trade: close, no position"  '.ok == false and (.error | test("No open position"))' "$S/trade.sh" close nvda
 check "trade: stop, no position"   '.ok == false' "$S/trade.sh" stop-loss nvda --trigger-price 100
 check "trade: cancel-all, nothing" '.ok and .nothing_to_do' "$S/trade.sh" cancel-all

@@ -100,7 +100,8 @@ REF=$(to_dec "$ref")
 PRICE=$(bc_int "($REF / 2) / $TICK * $TICK")
 SIZE=$(bc_int "(10^15 + $LOT - 1) / $LOT * $LOT")   # 0.001 of the asset, rounded up to the size step
 
-NONCE=$(printf '%d' "$(rpc_result eth_getTransactionCount "[\"$ADDR\",\"pending\"]" | jq -r '.')")
+next_nonce test "Try again in a moment."
+NONCE=$NEXT_NONCE
 ORDER_ID=$(cast keccak "$(cast abi-encode 'f(address,uint64,uint32)' "$ADDR" "$NONCE" 0)")
 DEADLINE=$(aligned_deadline)
 END=$(( DEADLINE + REST_FOR_US ))

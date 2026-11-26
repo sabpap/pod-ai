@@ -82,6 +82,18 @@ rpc_result() {
   echo "$out" | jq -c '.result'
 }
 
+# next_nonce STEP FIX: set NEXT_NONCE to the next transaction number of $ADDR, or fail with FIX.
+# A failed, empty or null lookup must stop here: passed straight to printf it would quietly become
+# nonce 0. A real 0 (an account that never sent) comes back as "0x0" and passes.
+# Call it directly, not inside $( ): fail must reach the caller's output.
+next_nonce() {
+  local raw
+  raw=$(rpc_result eth_getTransactionCount "[\"$ADDR\",\"pending\"]" 2>/dev/null | jq -r '.') || raw=""
+  echo "$raw" | grep -Eq '^(0x[0-9a-fA-F]+|[0-9]+)$' \
+    || fail "$1" "Pod did not give this account's next transaction number, so nothing was sent." "$2"
+  NEXT_NONCE=$(printf '%d' "$raw")
+}
+
 # require_staging: refuse to go on unless the RPC answers with pod staging's chain id.
 require_staging() {
   local hex id

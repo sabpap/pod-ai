@@ -233,7 +233,8 @@ do_send() {   # do_send PLAN_ID
   [ "$(jq -r .account "$PF" | tr 'A-F' 'a-f')" = "$(echo "$ADDR" | tr 'A-F' 'a-f')" ] || fail trade "Plan $1 was made for another wallet." "Make the plan again."
 
   local nonce t dl kind book txs="[]" ids="[]" i n out tx ok
-  nonce=$(printf '%d' "$(rpc_result eth_getTransactionCount "[\"$ADDR\",\"pending\"]" | jq -r .)")
+  next_nonce trade "Try again in a moment: trade.sh send $1 (the plan lasts 2 minutes)."
+  nonce=$NEXT_NONCE
   t=$(( $(now_us) + LAG_US )); dl=$(( (t + AUCTION_US - 1) / AUCTION_US * AUCTION_US ))
   kind=$(jq -r .kind "$PF"); book=$(jq -r '.call.book // empty' "$PF")
 

@@ -102,5 +102,16 @@ eq "2% band for a buy"         "$(bc_int "(150890000000000000000 * (10000 + 200)
 # short_addr
 eq "short address"             "$(short_addr 0x035A9E2f3ED8bAAD656E66BF3f0071da40DcDa70)" "0x035A…Da70"
 
+# next_nonce: a real 0 passes, a failed or empty lookup stops instead of becoming 0
+ADDR=0x035A9E2f3ED8bAAD656E66BF3f0071da40DcDa70
+nonce_of() { ( next_nonce test "retry"; echo "$NEXT_NONCE" ) | jq -r 'if type == "object" then "refused: " + .error else . end' 2>/dev/null; }
+rpc_result() { echo '"0x0"'; };  eq "nonce: fresh account is 0"  "$(nonce_of)" "0"
+rpc_result() { echo '"0x1f"'; }; eq "nonce: hex"                 "$(nonce_of)" "31"
+rpc_result() { echo 'null'; };   eq "nonce: null refused"        "$(nonce_of | cut -c1-8)" "refused:"
+rpc_result() { return 0; };      eq "nonce: empty refused"       "$(nonce_of | cut -c1-8)" "refused:"
+rpc_result() { return 2; };      eq "nonce: pod error refused"   "$(nonce_of | cut -c1-8)" "refused:"
+unset -f rpc_result; source "$(cd "$(dirname "$0")/../scripts" && pwd)/lib.sh"; set +e
+POD_RPC=http://127.0.0.1:9;      eq "nonce: no answer refused"   "$(nonce_of | cut -c1-8)" "refused:"
+
 echo "$pass passed, $failed failed"
 [ "$failed" -eq 0 ]
