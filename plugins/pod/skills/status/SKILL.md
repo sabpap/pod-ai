@@ -13,7 +13,7 @@ Run:
 "${CLAUDE_PLUGIN_ROOT}/scripts/status.sh" --quick    # without signing (under 1 s)
 ```
 
-Use the full check when the user asks. Use `--quick` when another pod skill only needs the facts. Status never sends a transaction.
+Use the full check when the user asks. Use `--quick` when another pod task only needs the facts. Status never sends a transaction.
 
 ## The levels
 
@@ -32,7 +32,7 @@ Use the full check when the user asks. Use `--quick` when another pod skill only
 1. **The `summary` line**, as given. For example: `pod: ready to trade · 0x035A…Da70 · value $99.9967 · 1 position · 0 orders · asks before trading`. "Value" is the account value: cash plus the unrealized profit or loss of open positions. It is the answer to "how much do I have". Cash alone is not: opening a perp only holds part of the cash as collateral, so cash barely moves.
 2. **Each entry in `problems`**: the `error`, then its `fix`, in plain words.
 3. **Each entry in `warnings`.**
-4. **The trading settings**, from `settings.in_words`, e.g. "asks before every trade · market orders within 2% of the price · limit orders rest 1 day". They are changed with `/pod:settings`.
+4. **The trading settings**, from `settings.in_words`, e.g. "asks before every trade · market orders within 2% of the price · limit orders rest 1 day". The user changes them by typing `/pod:settings`.
 5. **Capabilities**, only when the user asks what the agent can do, or when trading is not possible: list `capabilities` as can / cannot, with `why` for each "cannot".
 
 Keep it to a few lines. Do not dump the JSON.

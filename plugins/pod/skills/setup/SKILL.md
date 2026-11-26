@@ -6,7 +6,7 @@ argument-hint: "[keystore name | env:VARIABLE] [--yes] | show | test | disconnec
 
 # Setup: connect a wallet to pod
 
-Setup connects this plugin to **pod staging** (chain id 129302) and **one wallet**, and saves the result as the profile every other pod skill reads. The plugin only ever sends on pod staging.
+Setup connects this plugin to **pod staging** (chain id 129302) and **one wallet**, and saves the result as the profile the rest of the plugin reads. The plugin only ever sends on pod staging.
 
 All scripts are in `${CLAUDE_PLUGIN_ROOT}/scripts/`. Each prints one JSON object. `"ok": false` always comes with `step`, `error` and usually `fix`: tell the user the error and the fix in plain words, and stop.
 
@@ -74,7 +74,7 @@ Never ask for, read, print or store a password or a private key. If a keystore h
 | "Test my wallet again" | `test-transaction.sh` (plan), the Approve / Deny question from step 4, then `test-transaction.sh --yes` only on Approve |
 | "Disconnect" | `profile.sh delete`. It deletes only the profile, never the keystore, the Keychain entry or the variable |
 | "Use another wallet" | `profile.sh delete`, then connect again. One wallet at a time |
-| "What are my settings?" / "stop asking me" | Use `/pod:settings` |
+| "What are my settings?" / "stop asking me" | Show them with `profile.sh settings`; the user changes them by typing `/pod:settings` (switching to `auto` is always the user's own action) |
 
 ## Facts to keep straight
 
