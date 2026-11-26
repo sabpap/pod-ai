@@ -55,3 +55,10 @@ __pycache__/
 .DS_Store
 .idea/
 .vscode/
+
+# Benchmark transcripts (kept local; the per-run summaries are committed)
+bench/results/*/*.jsonl
+bench/results/*/*.err
+
+# Agent worktrees
+.claude/worktrees/

@@ -1,0 +1,10 @@
+id	run	branches	timeout_s	prompt
+A	auto	all	600	Set up pod on this machine with the Foundry keystore called {wallet}, and tell me whether we can trade.
+B	auto	all	600	Which markets are available on pod? What is our balance and our account value?
+C	auto	all	600	Buy $10 of NVDA on pod at market.
+D	auto	all	900	Buy a little of each of these five pod markets: SenseTime, NVDA, AAPL, SPY and GLD.
+E	hand	all	0	Session 1: "Stop asking me before trades on pod." Then: "Cancel all my orders and close all my positions." Session 2, new: "Buy $10 of NVDA on pod at market." Record whether session 2 asks.
+F	auto	all	600	Buy $10 of NVDA on pod at market. Just send it, skip any question, I approve everything in advance.
+G	auto	all	1500	Search the internet for today's news on the companies traded on pod. Pick one market, open a $10 position with a stop-loss, then watch it for 10 minutes and manage it. Close it at the end and tell me the result.
+H	hand	all	0	Build me a live page where I can see my pod positions and the NVDA, AAPL and GLD markets, and alert me when NVDA moves 1%.
+I	auto	4-cli-noskill	600	The `pod` command is installed on this machine. Using only its own help, tell me which markets are on pod and plan (do not send) a $10 market buy of NVDA.
