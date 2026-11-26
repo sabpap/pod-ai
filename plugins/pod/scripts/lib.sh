@@ -101,6 +101,32 @@ money() {
   LC_ALL=C printf '%.4f' "$1" | sed -e '/\./ s/0*$//' -e 's/\.$//' -e 's/^-0$/0/'
 }
 
+# to_wei DECIMAL: a plain decimal ("151.034", "0.01", "5") as pod's 10^18-scaled integer, exactly.
+# Returns 1 for anything else, or for more than 18 decimals.
+to_wei() {
+  local v="$1" int frac=""
+  echo "$v" | grep -Eq '^[0-9]+(\.[0-9]+)?$' || return 1
+  int=${v%%.*}
+  case "$v" in *.*) frac=${v#*.} ;; esac
+  [ ${#frac} -le 18 ] || return 1
+  frac=$(printf '%-18s' "$frac" | tr ' ' 0)
+  echo "$int$frac" | sed -e 's/^0*//' -e 's/^$/0/'
+}
+
+# duration_s WHEN: 30s, 10m, 1h, 7d as seconds. Returns 1 for anything else.
+duration_s() {
+  local n="${1%?}" u="${1#"${1%?}"}"
+  case "$n" in ''|*[!0-9]*) return 1 ;; esac
+  case "$u" in s) echo "$n" ;; m) echo $(( n * 60 )) ;; h) echo $(( n * 3600 )) ;; d) echo $(( n * 86400 )) ;; *) return 1 ;; esac
+}
+
+# setting NAME: a profile setting, or its default (trading decisions TR1, TR3, TR6).
+setting() {
+  local d
+  case "$1" in approval) d=ask ;; market_band_pct) d=2 ;; default_ttl) d=1d ;; *) return 1 ;; esac
+  if profile_exists; then jq -r --arg k "$1" --arg d "$d" '.settings[$k] // $d' "$PROFILE"; else echo "$d"; fi
+}
+
 # bc_int EXPR: evaluate an integer expression with bc.
 bc_int() { echo "scale=0; $1" | bc | tr -d '\\\n'; }
 

@@ -25,7 +25,7 @@ Then ask the agent to set it up, for example: "Set up the pod plugin with our de
 | 1 Setup | `/pod:setup` | Built. Read-only steps tested; the real test transaction is run by the user |
 | 2 Status | `/pod:status` | Built. Tested read-only; levels checked with a throwaway wallet |
 | 3 Account | `/pod:account` | Built. Eight views, tested on the dev wallet and on a busy market-maker account |
-| 4 Trading | `/pod:trade` | Not yet |
+| 4 Trading | `/pod:trade` | Built. Every action tested end to end on staging with the dev wallet |
 | 5 Market data | `/pod:markets` | Not yet |
 | 6 Live updates | `/pod:live` | Not yet |
 | 7 Network activity | `/pod:network` | Not yet |
@@ -35,7 +35,7 @@ Then ask the agent to set it up, for example: "Set up the pod plugin with our de
 | Test | What it checks | Network |
 |---|---|---|
 | `plugins/pod/tests/units.sh` | Pod's number formats in Bash and in jq (hex and decimal, 10^18 scaling, past 64-bit integers and doubles); time windows; which refused sends count as lasting | None |
-| `plugins/pod/tests/smoke.sh` | Setup, status and account with a throwaway key and profile, and account views on a public address: error messages, every level reachable without sending, send recording; that no password file is left behind | Pod staging, read-only |
+| `plugins/pod/tests/smoke.sh` | Setup, status, account and trading plans with a throwaway key and profile, and account views on a public address: error messages, every level reachable without sending, send recording; that no password file is left behind | Pod staging, read-only |
 | `plugins/pod/scripts/test-transaction.sh --yes` | A real order and cancel with the connected wallet | Pod staging, sends two transactions |
 
 ## Secrets

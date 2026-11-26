@@ -8,6 +8,10 @@
 #   profile.sh save --keystore NAME --address ADDR
 #   profile.sh save --env VAR --address ADDR
 #   profile.sh set-test < result.json       store a test-transaction result
+#   profile.sh settings                     the trading settings, with defaults filled in
+#   profile.sh set approval ask|auto        ask before every send, or send without asking
+#   profile.sh set market_band_pct 2        default worst-price band for market orders, 0.1 to 20
+#   profile.sh set default_ttl 1d           default time a limit order rests, 1m to 30d
 #   profile.sh delete                       disconnect (the wallet itself is not touched)
 
 source "$(dirname "$0")/lib.sh"
@@ -58,6 +62,28 @@ case "$cmd" in
     echo "$result" | jq -e . >/dev/null || fail profile "The test result is not valid JSON."
     jq --argjson r "$result" '.test_transaction = $r' "$PROFILE" | profile_write
     jq '{ok: true} + {test_transaction: .test_transaction}' "$PROFILE"
+    ;;
+
+  settings)
+    jq -n --arg a "$(setting approval)" --arg b "$(setting market_band_pct)" --arg t "$(setting default_ttl)" \
+      '{ok: true, settings: {approval: $a, market_band_pct: ($b | tonumber), default_ttl: $t}}'
+    ;;
+
+  set)
+    profile_exists || fail profile "No profile to change." "Run /pod:setup first."
+    key="${1:-}"; val="${2:-}"
+    case "$key" in
+      approval) case "$val" in ask|auto) ;; *) fail profile "approval is ask or auto." ;; esac ;;
+      market_band_pct)
+        echo "$val" | grep -Eq '^[0-9]+(\.[0-9]{1,2})?$' || fail profile "market_band_pct is a number from 0.1 to 20, at most 2 decimals."
+        [ "$(echo "$val >= 0.1 && $val <= 20" | bc)" = 1 ] || fail profile "market_band_pct is a number from 0.1 to 20." ;;
+      default_ttl)
+        s=$(duration_s "$val") || fail profile "default_ttl is a time such as 30m, 1h or 7d."
+        { [ "$s" -ge 60 ] && [ "$s" -le 2592000 ]; } || fail profile "default_ttl is between 1m and 30d." ;;
+      *) fail profile "Unknown setting '$key'." "Settings: approval, market_band_pct, default_ttl." ;;
+    esac
+    jq --arg k "$key" --arg v "$val" '.settings = ((.settings // {}) + {($k): $v})' "$PROFILE" | profile_write
+    "$0" settings
     ;;
 
   delete)

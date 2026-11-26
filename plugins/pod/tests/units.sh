@@ -74,6 +74,29 @@ eq "since a time"              "$(since_us 2026-11-01T12:00:00Z)"               
 eq "since nonsense refused"    "$(since_us 7x || echo refused)"                 "refused"
 eq "since letters refused"     "$(since_us abcd || echo refused)"               "refused"
 
+# to_wei: a user's decimal as pod's 10^18 integer
+eq "wei: price"                "$(to_wei 151.034)"     "151034000000000000000"
+eq "wei: whole"                "$(to_wei 5)"           "5000000000000000000"
+eq "wei: small size"           "$(to_wei 0.000001)"    "1000000000000"
+eq "wei: zero"                 "$(to_wei 0)"           "0"
+eq "wei: 18 decimals"          "$(to_wei 0.000000000000000001)" "1"
+eq "wei: 19 decimals refused"  "$(to_wei 0.0000000000000000001 || echo refused)" "refused"
+eq "wei: negative refused"     "$(to_wei -1 || echo refused)"   "refused"
+eq "wei: text refused"         "$(to_wei 1e5 || echo refused)"  "refused"
+
+# duration_s: resting times
+eq "duration 10m"              "$(duration_s 10m)"     "600"
+eq "duration 1d"               "$(duration_s 1d)"      "86400"
+eq "duration bad"              "$(duration_s 1w || echo refused)" "refused"
+
+# rounding as trade.sh does it: buy price down, sell price up, size down (tick 0.01, lot 0.000001)
+TICK=10000000000000000; LOT=1000000000000
+eq "buy price rounds down"     "$(bc_int "151034000000000000000 / $TICK * $TICK")"              "151030000000000000000"
+eq "sell price rounds up"      "$(bc_int "(151034000000000000000 + $TICK - 1) / $TICK * $TICK")" "151040000000000000000"
+eq "price on a step stays"     "$(bc_int "(151030000000000000000 + $TICK - 1) / $TICK * $TICK")" "151030000000000000000"
+eq "size rounds down"          "$(bc_int "12345678900000000 / $LOT * $LOT")"                    "12345000000000000"
+eq "2% band for a buy"         "$(bc_int "(150890000000000000000 * (10000 + 200) / 10000) / $TICK * $TICK")" "153900000000000000000"
+
 # short_addr
 eq "short address"             "$(short_addr 0x035A9E2f3ED8bAAD656E66BF3f0071da40DcDa70)" "0x035A…Da70"
 

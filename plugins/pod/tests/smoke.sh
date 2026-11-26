@@ -71,7 +71,32 @@ check "account: bad address"       '.ok == false' "$S/account.sh" overview 0x123
 check "account: bad since"         '.ok == false' "$S/account.sh" trades "$DEV" --since yesterday
 check "account: bad order status"  '.ok == false' "$S/account.sh" orders "$DEV" --status done
 
+# Trading: plans and refusals only. The throwaway wallet is unfunded, so nothing could trade anyway.
+check "settings: defaults"         '.settings.approval == "ask" and .settings.market_band_pct == 2 and .settings.default_ttl == "1d"' "$S/profile.sh" settings
+check "settings: bad approval"     '.ok == false' "$S/profile.sh" set approval maybe
+check "settings: band too wide"    '.ok == false' "$S/profile.sh" set market_band_pct 25
+check "settings: set resting time" '.settings.default_ttl == "1h"' "$S/profile.sh" set default_ttl 1h
+"$S/profile.sh" set default_ttl 1d >/dev/null
+check "trade: plan rounds safe"    '.ok and .needs_approval and .preview.price == "75.03" and .preview.size == "0.012345" and (.notes | length) >= 2' "$S/trade.sh" buy nvda 0.0123456789 --price 75.034
+check "trade: sell rounds up"      '.preview.price == "75.04"' "$S/trade.sh" sell nvda 0.001 --price 75.031
+check "trade: market order cap"    '.ok and (.preview.worst_price | type == "string") and (.notes[0] | test("plus 2%"))' "$S/trade.sh" buy nvda 0.001 --market
+check "trade: own band"            '(.notes[0] | test("minus 1.5%"))' "$S/trade.sh" sell nvda 0.001 --market --band 1.5
+check "trade: maker+ioc refused"   '.ok == false' "$S/trade.sh" buy nvda 0.001 --price 75 --maker-only --ioc
+check "trade: unknown market"      '.ok == false and (.error | test("No market"))' "$S/trade.sh" buy nosuchthing 1 --price 1
+check "trade: size below step"     '.ok == false' "$S/trade.sh" buy nvda 0.0000001 --price 75
+check "trade: --send needs auto"   '.ok == false and (.error | test("ask"))' "$S/trade.sh" buy nvda 0.001 --price 75 --send
+check "trade: unknown plan"        '.ok == false' "$S/trade.sh" send p00000000
+pid=$("$S/trade.sh" buy nvda 0.001 --price 75 | jq -r .plan_id)
+jq '.expires = 0' "$POD_PLUGIN_HOME/plans/$pid.json" > "$POD_PLUGIN_HOME/plans/x" && mv "$POD_PLUGIN_HOME/plans/x" "$POD_PLUGIN_HOME/plans/$pid.json"
+check "trade: expired plan"        '.ok == false and (.error | test("expired"))' "$S/trade.sh" send "$pid"
+check "trade: follow unsent plan"  '.ok == false' "$S/trade.sh" follow "$pid"
+check "trade: close, no position"  '.ok == false and (.error | test("No open position"))' "$S/trade.sh" close nvda
+check "trade: stop, no position"   '.ok == false' "$S/trade.sh" stop-loss nvda --trigger-price 100
+check "trade: cancel-all, nothing" '.ok and .nothing_to_do' "$S/trade.sh" cancel-all
+check "trade: cancel unknown"      '.ok == false' "$S/trade.sh" cancel 0x0000000000000000000000000000000000000000000000000000000000000001
+
 check "disconnect"                '.disconnected'                         "$S/profile.sh" delete
+check "trade: no wallet"          '.ok == false and (.fix | test("setup"))' "$S/trade.sh" buy nvda 1 --price 1
 check "status: not set up"        '.level == "not set up" and .wallet == null' "$S/status.sh" --quick
 check "account: no wallet, no address" '.ok == false and (.fix | test("setup"))' "$S/account.sh"
 check "send refused when not set up" '.ok == false'                       "$S/wallet.sh" send 0x0 "f()"

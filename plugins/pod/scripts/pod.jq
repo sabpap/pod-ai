@@ -69,3 +69,20 @@ def fixed(n):
 
 # Market id -> "NVDA perp" / "NVDAx spot", from the /clob/markets list passed as $markets.
 def market_map: map({key: .id, value: (.base_token_symbol + " " + .market_type)}) | from_entries;
+
+# Find one market in the /clob/markets list from a loose name: "nvda", "NVDA perp", "nvidia",
+# "NVDAx", "nvda spot", or the 0x market id. Perps win over spot unless spot is asked for.
+def find_market($q; $spot):
+  ($q | ascii_downcase | gsub("^\\s+|\\s+$"; "")) as $q0
+  | ($spot or ($q0 | test(" spot$"))) as $want_spot
+  | ($q0 | sub(" (perp|perpetual|spot)$"; "")) as $k
+  | [ .[] | select(
+        (.id | ascii_downcase) == $k
+        or (.base_token_symbol | ascii_downcase) == $k
+        or (.base_token_symbol | ascii_downcase) == ($k + "x")
+        or ((.base_token_name // "") | ascii_downcase) == $k
+        or ((.base_token_name // "") | ascii_downcase) == ($k + " perpetual")
+        or (.name | ascii_downcase) == $k) ]
+  | (if $want_spot then map(select(.market_type == "spot"))
+     else map(select(.market_type == "perp")) + map(select(.market_type == "spot")) end)
+  | .[0] // null;

@@ -74,6 +74,10 @@ Never ask for, read, print or store a password or a private key. If a keystore h
 | "Test my wallet again" | `test-transaction.sh` (plan), the Approve / Deny question from step 4, then `test-transaction.sh --yes` only on Approve |
 | "Disconnect" | `profile.sh delete`. It deletes only the profile, never the keystore, the Keychain entry or the variable |
 | "Use another wallet" | `profile.sh delete`, then connect again. One wallet at a time |
+| "What are my trading settings?" | `profile.sh settings` |
+| "Let the agent trade without asking" / "always ask me first" | `profile.sh set approval auto` / `profile.sh set approval ask`. Confirm with the user before switching to `auto`: from then on, trades are sent without a question |
+| "Use a 1% band for market orders" | `profile.sh set market_band_pct 1` (0.1 to 20) |
+| "Orders should rest 1 hour by default" | `profile.sh set default_ttl 1h` (1m to 30d) |
 
 ## Facts to keep straight
 
