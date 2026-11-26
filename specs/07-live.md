@@ -70,6 +70,10 @@ An independent review found seven problems, all fixed before the first commit: `
 
 Tested: 57 offline unit checks (`tests/live-units.mjs`); 10 checks against a fake pod server (`tests/live-reconnect.sh`, Deno) that drops the connection and then closes the stream the way pod does, proving the listener resumes from round 3 and then round 4 with no gap or repeat; 11 smoke checks against staging; and by hand every channel, `list`, `stop`, a receipt that ends the listener, and every refusal.
 
+## Changes (2026-11-26, version 0.5.1)
+
+The tester built its own live page in a terminal browser instead of using `live.sh`, subscribed to `pod_positions` without `since`, and saw "subscribed" with no data. The skill had presented `since` as a way to avoid gaps and said state channels send the current state "when given `since`", without saying that without it they send nothing until the account changes. The skill now opens pod's protocol with that rule (read the REST view, take its `timestamp` or `solution_now`, subscribe from it), names a live page or dashboard as a case, and adds the dedupe and reconnect rules `live.sh` follows. Checked on staging: the dev wallet's positions with `since` sent the current state at once; without it, nothing in 3 seconds.
+
 ## Not part of Live
 
 Acting on a condition (the agent does that with `/pod:trade`), withdrawals and transfers channels (out of scope), keeping a listener alive after the session ends.

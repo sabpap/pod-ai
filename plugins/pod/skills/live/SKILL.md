@@ -24,6 +24,7 @@ A listener is long-running, so **never run it in the foreground** without `--for
 | **"Watch X and if this happens, do that"** | The same, then do "that" with the other skills. A trade still goes through `/pod:trade`, which asks for approval unless the approval setting is `auto` |
 | **A running commentary**: "keep me posted on NVDA for the next half hour" | The Monitor tool with `command: live.sh market NVDA --for 30m` and `timeout_ms: 1800000`. Every line becomes a message. A Monitor lasts at most 30 minutes: for longer, start it again when it expires |
 | **Watch now, look later**: "follow my positions, I'll ask later" | Bash `run_in_background: true` without `--until`; read its output file when the user asks |
+| **A live view on a page or dashboard**: "show my positions live in the browser" | The page connects to pod itself. Follow "Pod's live protocol" below, rule 1 above all: draw the current state from the REST answer, then subscribe from that answer's round time. Check the page shows data within a few seconds before handing it over |
 | A one-off look | Not a listener: use `/pod:markets` or `/pod:account` |
 
 Tell the user what is running in one line, from the first line the listener prints (`"event": "watching"`): what it watches, the condition, how often it reports, and its `id`. Stop listeners the user no longer needs:
@@ -86,12 +87,16 @@ A stop-loss or take-profit on a position does not need a listener: pod watches i
 | `"event": "stopped"` | Last line: `reason` (time up, stopped on request, every receipt arrived) |
 | `"ok": false` | Refused before starting, with `error` and `fix` |
 
-## For other harnesses: pod's live protocol
+## Pod's live protocol: for a page, a dashboard or another harness
 
-A harness without background processes can run `live.sh` itself, or talk to pod directly:
+`live.sh` already follows these rules. Anything that talks to pod's WebSocket itself (a web page, a dashboard, a harness without background processes) must follow them too.
 
-- Connect to `wss://staging-rpc.podtestnet.dev` and send `{"jsonrpc":"2.0","id":1,"method":"eth_subscribe","params":["<channel>",{options}]}`. Updates arrive as `eth_subscription` notifications after each auction round.
-- Channels: `pod_markets`, `pod_orderbook` (`depth`), `pod_candles`, `pod_orders_v2` (`bidder` or `bidders`, up to 64), `pod_activity`, `pod_positions`, `pod_triggers` (these three need `account`), `pod_receipts` (`account` or `tx_hashes`), `newHeads`. Market channels take `orderbook_ids` from `/pod:markets`.
-- Numbers are 10^18-scaled, hex or decimal; times are microseconds.
-- No gaps: read the REST view first, note its `solution_now`, and subscribe with `since` set to it. Pod replays every round after it (about 2.3 hours are kept; older is refused with "since too old"). State channels (`pod_markets`, `pod_positions`, `pod_triggers`) send the current state at once when given `since`.
-- When pod closes a stream, the notification carries `error.data.resume_since` (and `resume_since_book` on `pod_orders_v2`): subscribe again with them.
+1. **Always subscribe with `since`.** Without it, `pod_markets`, `pod_positions` and `pod_triggers` send **nothing until something changes**: on a quiet account, a positions view stays empty, possibly for hours, while the subscription looks healthy ("subscribed", no error). So:
+   - First read the matching REST route and draw the current state from it: `/v1/clob/positions/{account}`, `/v1/clob/triggers/{account}`, `/v1/clob/markets/stats`, `/v1/clob/orderbook/{id}`.
+   - Take that answer's round time: `timestamp` on positions, triggers and the order book; `solution_now` on the others. `GET /v1/clob/status` also gives `solution_now`.
+   - Subscribe with `since` set to it, as a JSON number (a string is refused). Market, positions and triggers channels then send the current state at once and stream from there. The other channels replay every round after it, so nothing between the REST read and the subscription is lost. Pod keeps about 2.3 hours; an older `since` is refused with "since too old".
+2. Connect to `wss://staging-rpc.podtestnet.dev` and send `{"jsonrpc":"2.0","id":1,"method":"eth_subscribe","params":["<channel>",{options}]}`. Updates arrive as `eth_subscription` notifications after each auction round.
+3. Channels: `pod_markets`, `pod_orderbook` (`depth`), `pod_candles`, `pod_orders_v2` (`bidder` or `bidders`, up to 64), `pod_activity`, `pod_positions`, `pod_triggers` (these three need `account`), `pod_receipts` (`account` or `tx_hashes`), `newHeads`. Market channels take `orderbook_ids` from `/pod:markets`.
+4. Numbers are 10^18-scaled, hex or decimal; times are microseconds. Pod sends 0 for a price it does not have.
+5. Market, positions and triggers may send the same round twice, or an older one late: keep the newest `timestamp` per market or account and drop the rest.
+6. When the connection drops, reconnect and subscribe with `since` = the last round received. When pod closes a stream itself, the notification carries `error.data.resume_since` (and `resume_since_book` on `pod_orders_v2`): subscribe again with them.

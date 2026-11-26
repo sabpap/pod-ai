@@ -1,6 +1,6 @@
 {
   "name": "pod",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Read and trade on pod network (staging) through pod's own API: connect a wallet, check status, see any account, read markets, follow live updates, place and cancel orders.",
   "author": {
     "name": "pod-ai"
