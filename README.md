@@ -1,52 +1,72 @@
-# pod-ai
+# pod-ai: 1-raw
 
-AI tools for pod network. This repo is a Claude Code plugin marketplace holding one plugin, `pod`.
+The agent uses pod network's raw API, guided only by pod's own docs.
 
-- Specs: [specs/](specs/)
-- Plugin: [plugins/pod/](plugins/pod/)
+This is the loosest way to give an agent pod: it works with pod's API directly. There is one Agent Skill with a short overview of pod, the links to pod's docs, and one script that finds the wallet. Everything else the agent works out from the docs, every time.
 
-## Install
+This is one of four approaches, one branch each: `1-raw` (this one), `2-manual`, `3-plugin` and `4-cli`. They are compared on `main`.
 
-A person runs these, not the agent: Claude Code's auto mode blocks an agent from installing a plugin itself (seen 2026-11-26).
+## What is here
 
 ```
-/plugin marketplace add /Users/sabpap/Workspace/Clients/Laurium/pod-ai
-/plugin install pod@pod-ai
+.claude/skills/pod/
+  SKILL.md                 what pod is, the staging endpoints, where the docs are, two rules
+  scripts/check-wallet.sh  finds the wallet and prints its address, never the key
 ```
 
-Then **start a new Claude Code session**. Skills load when a session starts, so `/pod:setup` does not appear in the session that installed it.
+## Setup
 
-Then ask the agent to set it up, for example: "Set up the pod plugin with our dev wallet."
+1. Install the tools the agent will reach for: Foundry's `cast` (`brew install foundry`, or see [getfoundry.sh](https://getfoundry.sh)), `curl` and `jq`.
+2. Provide a wallet, in one of two forms:
+   - A private key in your shell: `export POD_PRIVATE_KEY=...` in the terminal that will start Claude Code. Never paste a key into the chat.
+   - A Foundry keystore in `~/.foundry/keystores` (or the folder in `POD_KEYSTORE_DIR`), named with `export POD_KEYSTORE=<name>`. If the folder holds only one keystore, the name is optional. The password goes in the macOS Keychain: `security add-generic-password -s foundry-keystore -a <name> -w`.
+3. Check the wallet: `bash .claude/skills/pod/scripts/check-wallet.sh`. It prints the address and which form it found.
+4. Start a session in this folder: `claude`. The skill loads from `.claude/skills/pod/` with no install step.
 
-## What is built
+**Disable a globally installed `pod` plugin while testing this branch.** Run `/plugin`, find `pod`, and disable it, then start a new session. Otherwise the session silently gets the plugin's skills as well, and the test no longer shows the raw approach.
 
-| Section | Skill | State |
-|---|---|---|
-| 1 Setup | `/pod:setup` | Built. Read-only steps tested; the real test transaction is run by the user |
-| 2 Status | `/pod:status` | Built. Tested read-only; levels checked with a throwaway wallet |
-| 3 Account | `/pod:account` | Built. Eight views, tested on the dev wallet and on a busy market-maker account |
-| 4 Trading | `/pod:trade` | Built. Every action tested end to end on staging with the dev wallet. Orders can be sized in dollars (`--usd`) |
-| Settings | `/pod:settings` | Built. Approval (ask or auto), market band, default resting time; shown by status and setup |
-| 5 Market data | `/pod:markets` | Built. Markets, movers, one market, the book with the cost of a size, price bars, per-round history |
-| 6 Live updates | `/pod:live` | Built. A background listener for nine channels with conditions; needs Node.js 22 or later |
-| 7 Network activity | `/pod:network` | Not yet |
+### Use the skill elsewhere
 
-## Tests
+Copy it to your personal skills folder, and every Claude Code session on this machine gets it:
 
-| Test | What it checks | Network |
-|---|---|---|
-| `plugins/pod/tests/units.sh` | Pod's number formats in Bash and in jq (hex and decimal, 10^18 scaling, past 64-bit integers and doubles); time windows; which refused sends count as lasting | None |
-| `node plugins/pod/tests/live-units.mjs` | The live listener's decoding (exact amounts, prices, book, bars, orders, activity, positions, triggers) and its conditions | None |
-| `plugins/pod/tests/live-reconnect.sh` | The listener against a fake pod server that drops the connection and closes the stream: it resumes from the last round with no gap or repeat. Needs Deno | Local fake, plus staging's market list |
-| `plugins/pod/tests/smoke.sh` | Setup, status, account, markets and trading plans with a throwaway key and profile, account views on a public address, and short live listeners: error messages, every level reachable without sending, send recording; that no password file is left behind | Pod staging, read-only |
-| `plugins/pod/scripts/test-transaction.sh --yes` | A real order and cancel with the connected wallet | Pod staging, sends two transactions |
+```
+mkdir -p ~/.claude/skills
+cp -R .claude/skills/pod ~/.claude/skills/pod
+```
+
+## Example requests
+
+- "What markets are on pod, and which moved most today?"
+- "What's our balance and our open positions on pod?"
+- "Show the NVDA order book."
+- "Buy $20 of NVDA at the current price, then cancel it if it does not fill."
+
+## Architecture, strengths and weaknesses
+
+**Architecture.** One skill and one script. The skill says what pod is, where its endpoints are and where the docs are. The agent reads the docs, then calls the REST API, JSON-RPC and WebSocket channels itself with `curl`, `cast` and whatever else it chooses. It signs and sends transactions with `cast`. The only fixed rules are: pod staging only, and never print, store or commit a private key or password.
+
+**Strengths.**
+
+- Full flexibility. The agent may call any route with any parameter, and can do anything pod's API allows.
+- Nothing to maintain. There is no code that encodes pod's rules, so nothing to update when pod changes.
+- Always current. The agent reads pod's live docs on each task.
+
+**Weaknesses.**
+
+- Every number conversion is improvised each time. The agent reads pod's formats in the docs and must apply them right, on its own, every time.
+- Every transaction is improvised each time: the agent builds it from the docs, and works out on its own whether it really did what was asked.
+- Nothing is tested. No conversion or order building has been checked in advance.
+- No state, no settings and no status. The agent does not remember the wallet, does not know whether it can trade before it tries, and has no defaults.
+- Approval exists nowhere except Claude Code's own permission prompts. Nothing stops a trade except the prompt for the shell command that sends it.
+- Results cannot be checked against tested code. When the agent reports a balance or a fill, there is nothing to compare it with.
+- Runs differ. The same request can take a different path, a different time and a different number of tokens each time.
 
 ## Secrets
 
 Nothing secret belongs in this repo: no private keys, keystores, seed phrases, passwords or `.env` files.
 
-- [`.gitignore`](.gitignore) keeps out key, wallet, environment and credential files, and the plugin's own profile and temp files.
-- [gitleaks](https://github.com/gitleaks/gitleaks) checks every commit with pod-specific rules in [`.gitleaks.toml`](.gitleaks.toml) (wallet private keys, encrypted keystores, seed phrases) on top of its defaults. Turn the hook on once per clone:
+- [`.gitignore`](.gitignore) keeps out key, wallet, environment and credential files.
+- [gitleaks](https://github.com/gitleaks/gitleaks) checks every commit with pod-specific rules in [`.gitleaks.toml`](.gitleaks.toml) on top of its defaults. Turn the hook on once per clone:
   ```
   brew install gitleaks
   git config core.hooksPath .githooks
