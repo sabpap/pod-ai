@@ -76,7 +76,7 @@ The plugin is skills plus Bash scripts. The skills tell the agent which script t
 
 | Test | What it checks | Network |
 |---|---|---|
-| `plugins/pod/tests/units.sh` | Pod's number formats in Bash and in jq (hex and decimal, 10^18 scaling, past 64-bit integers and doubles); time windows; which refused sends count as lasting | None |
+| `plugins/pod/tests/units.sh` | Pod's number formats in Bash and in jq (hex and decimal, 10^18 scaling, past 64-bit integers and doubles); time windows; which refused sends count as lasting; that a failed nonce lookup stops a send while a real nonce 0 passes | None |
 | `node plugins/pod/tests/live-units.mjs` | The live listener's decoding (exact amounts, prices, book, bars, orders, activity, positions, triggers) and its conditions | None |
 | `plugins/pod/tests/live-reconnect.sh` | The listener against a fake pod server that drops the connection and closes the stream: it resumes from the last round with no gap or repeat. Needs Deno | Local fake, plus staging's market list |
 | `plugins/pod/tests/smoke.sh` | Setup, status, account, markets and trading plans with a throwaway key and profile, account views on a public address, and short live listeners: error messages, every level reachable without sending, send recording; that no password file is left behind | Pod staging, read-only |
