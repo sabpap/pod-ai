@@ -10,20 +10,100 @@ The other approaches are in branches `1-raw`, `2-manual` and `3-plugin`, and are
 
 ## Setup
 
-1. **Install the command.** From this folder:
-   ```
-   cli/install.sh                 # links pod into ~/.local/bin (or: cli/install.sh --bin DIR)
-   pod --version                  # pod 1.1.0
-   ```
-   `~/.local/bin` must be on your PATH; the installer says so if it is not. pod needs `cast` (Foundry), `jq`, `curl` and `bc`; `pod live` also needs Node.js 22 or later. `cli/install.sh --uninstall` removes the link.
-2. **Add the plugin** (a person does this; Claude Code's auto mode blocks an agent from installing plugins):
-   ```
-   /plugin marketplace add /path/to/pod-ai
-   /plugin install pod@pod-ai
-   ```
-   Then start a new Claude Code session: skills and hooks load when a session starts.
-   **Only one pod plugin at a time.** When two enabled plugins share a name, Claude Code registers the hooks of only one of them. Disable any other installed `pod` plugin (for example one from branch `3-plugin`) with `/plugin` before you test this one.
-3. **Connect a wallet**: `pod setup wallets`, then `pod setup --keystore NAME`, or ask the agent to set up pod. The profile stays where it was (`~/.config/pod-plugin`, or `POD_PLUGIN_HOME`), so a wallet connected on another branch works here unchanged.
+From cloning this branch to a wallet that is ready to trade. You do steps 1 to 4 and step 6; Claude does step 5.
+
+**You need:** a Mac and [Claude Code](https://code.claude.com).
+
+On Linux, the keystore wallet in step 3 does not work: pod reads its password from the macOS Keychain. Use a private key in an environment variable instead (`pod setup --env POD_PRIVATE_KEY`).
+
+### 1. Clone the CLI branch
+
+```
+git clone -b 4-cli https://github.com/sabpap/pod-ai.git ~/pod-ai-cli
+```
+
+### 2. Install Foundry
+
+Install [Foundry](https://getfoundry.sh) by following the steps on its site. It provides `cast`, which pod uses for the wallet.
+
+### 3. Choose a wallet
+
+Run these in your own terminal. You type the key and the password yourself, and Claude never sees them.
+
+**Option A: create a new wallet and fund it**
+
+```
+cast wallet new ~/.foundry/keystores pod-ai-stg-wallet
+security add-generic-password -s foundry-keystore -a pod-ai-stg-wallet -w
+```
+
+The first command asks for a password and creates the wallet. The second stores the same password in the macOS Keychain, so pod can sign without asking you each time. Then fund the wallet on pod staging. If the first command did not print the address, setup shows it in step 5.
+
+**Option B: use a wallet you already have, with funds on pod staging**
+
+If it is already a Foundry keystore, only store its password:
+
+```
+security add-generic-password -s foundry-keystore -a YOUR_KEYSTORE_NAME -w
+```
+
+If you only have the private key, import it, then store the password:
+
+```
+cast wallet import pod-ai-stg-wallet --interactive
+security add-generic-password -s foundry-keystore -a pod-ai-stg-wallet -w
+```
+
+### 4. Add the plugin to Claude Code
+
+In Claude Code:
+
+```
+/plugin marketplace add ~/pod-ai-cli
+/plugin install pod@pod-ai
+```
+
+Then quit and start a new Claude Code session: skills and hooks load only when a session starts.
+
+If you already have another `pod` plugin installed, for example from branch `3-plugin`, disable it with `/plugin`. Only one pod plugin's hooks load at a time.
+
+### 5. Let Claude do the rest
+
+In the new session, say:
+
+> Install the pod command from ~/pod-ai-cli with anything it needs, then set up pod with the pod-ai-stg-wallet wallet.
+
+Use your own keystore name if you kept an existing one in Option B. Claude will:
+
+- run `cli/install.sh`, which links `pod` into `~/.local/bin`;
+- install `jq` and Node.js 22 or later if they are missing, and add `~/.local/bin` to your PATH if needed;
+- run `pod setup --keystore pod-ai-stg-wallet`, which checks the tools, checks that pod staging is reachable, signs a test message and reads your balance.
+
+### 6. Approve the test transaction
+
+Claude Code asks you, in a prompt labelled `[plugin:pod]`, before setup sends a test order. The order is placed at half the market price so it cannot fill, and it is cancelled straight away: two transactions, about 15 seconds. Approve it.
+
+### Check the result
+
+Setup ends with one of these levels:
+
+| Level | Meaning | What to do |
+|---|---|---|
+| ready to trade | Everything passed | Nothing. Try "what's my balance?" |
+| connected, read-only | The wallet has no cash on pod | Fund it, then ask Claude to run the wallet test again |
+| connected, untested | You skipped or denied the test | Ask Claude to test the wallet again |
+| problem | The test order failed | Claude shows the error and the command that fixes it |
+
+### Good to know
+
+- **Trades always ask first.** The approval setting starts at "ask", and Claude Code asks you before every send. Switching approval off with `/pod:settings` also asks.
+- **You can use pod without Claude.** In a terminal, `pod --help` lists every command, for example `pod status` or `pod markets movers`.
+- **Fewer prompts for reading.** To let Claude read and plan without asking each time, add these rules to `.claude/settings.json`. Sends still ask.
+  ```json
+  { "permissions": { "allow": ["Bash(pod status *)", "Bash(pod markets *)", "Bash(pod account *)", "Bash(pod live *)", "Bash(pod trade *)"] } }
+  ```
+- **Uninstall.** Run `~/pod-ai-cli/cli/install.sh --uninstall`, then remove the plugin with `/plugin`. Your wallet and profile (`~/.config/pod-plugin`) stay.
+- **A wallet connected on another branch works here unchanged.** All branches share the same profile.
 
 ## Three things this branch can do that `3-plugin` cannot
 
