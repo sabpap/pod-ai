@@ -66,6 +66,26 @@ Every branch sized in dollars. None put the same number of units in each market.
 
 **Wallets after all runs.** No open orders or positions. Account value: `1-raw` $17.38, `2-manual` $19.87, `3-plugin` $19.37, `4-cli` $19.26. The `1-raw` loss is mostly the $108 run: fees and price slippage on five positions opened and closed.
 
+## What we write and maintain
+
+Instructions are prose the agent interprets: skill files, reference files, and on `4-cli` the command's own help. Nothing can test whether an agent will follow prose, so every line of it is a place where two runs can differ. Code can be tested.
+
+| | `1-raw` | `2-manual` | `3-plugin` | `4-cli` |
+|---|---|---|---|---|
+| Instructions nothing checks (lines · files) | 50 · 1 | 1,038 · 6 | 547 · 8 | 84 · 4 |
+| Instructions a test checks against the code | 0 | 0 | 0 | 590 (the command's help) |
+| Code (lines · files) | 67 · 1 | 423 · 2 | 3,487 · 16 | 4,332 · 19 |
+| Automated checks on that code | 0 | 371 | 231 | 573 |
+| Everything we maintain, with tests (lines) | 117 | 2,157 | 4,554 | 5,947 |
+
+We expected the CLI to mean fewer instructions. Counted honestly, that holds only in part:
+
+- **It holds from `2-manual` to `3-plugin`.** Half of the prose became code. That is where the run-to-run spread closed: three different outcomes for "a little of five markets" on `1-raw`, the same $3 of each on `3-plugin`.
+- **It does not hold as a line count from `3-plugin` to `4-cli`.** The CLI has more instruction text in total (674 lines against 547), because the manual moved into the help. What changed is its kind: 84 lines are left that nothing checks, and the rest fails a test when it stops matching the code.
+- **None of this is free.** The tested versions are 40 to 50 times more to maintain than `1-raw`. The return is the results above: three to seven times less time per trade, and the same outcome every run.
+
+Counted on the branch heads used for the runs: `.md` files under the skill folders as instructions, `#:` lines in the `pod` command as its help, and the test suites' own pass counts as checks.
+
 ## Limits of this benchmark
 
 - Three runs per case. The spread between runs of `1-raw` is large; treat single numbers as rough.
