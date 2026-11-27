@@ -1,0 +1,21 @@
+{
+  "branch": "2-manual",
+  "case": "H",
+  "run": 2,
+  "finished": true,
+  "turns": 19,
+  "tool_calls": 17,
+  "tools": {
+    "Bash": 7,
+    "Glob": 1,
+    "Read": 7,
+    "Skill": 1,
+    "Write": 1
+  },
+  "seconds": 172,
+  "cost_usd": 0.8894375,
+  "permission_denials": 0,
+  "sessions_turns": 1,
+  "send_attempts": 0,
+  "answer": "CORS is wide open (`*`), so the page works from a local file. The dashboard is now open in your browser at [dashboard.html](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai-variants/2-manual/dashboard.html) [📁](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai-variants/2-manual/).\n\nHere's what it does:\n\n- **Account section** — shows your account value ($19.72), cash, and unrealized P&L, updated live via `pod_positions`\n- **Market cards** — NVDA, AAPL, and GLD with mark price, 24h change, oracle, last trade, high/low, volume, open interest, and funding rate, updated live via `pod_markets`\n- **Positions table** — currently empty (no open positions); will populate live when you open a position\n- **NVDA 1% alert** — when the mark price moves 1% from its anchor (resets after each alert), it fires a banner on the page and a browser notification (the page will ask for notification permission)\n\nAll numbers are converted with BigInt (no floating-point truncation). The WebSocket subscribes with `since` from the REST snapshot, drops repeated rounds, heartbeats every 30s, and auto-reconnects with exponential backoff."
+}

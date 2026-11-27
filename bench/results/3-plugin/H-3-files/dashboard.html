@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pod Dashboard</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --surface-0: #111111;
+    --surface-1: #191919;
+    --surface-2: #242424;
+    --text-primary: #efefef;
+    --text-secondary: #9c9c9c;
+    --text-muted: #666666;
+    --border: #333333;
+    --series-blue: #338ced;
+    --series-orange: #e76624;
+    --series-aqua: #00a888;
+    --status-good: #0aac23;
+    --status-warning: #d28e05;
+    --status-serious: #eb6263;
+    --status-critical: #ec4647;
+    --up: #0aac23;
+    --down: #eb6263;
+    --flat: #9c9c9c;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    background: var(--surface-0);
+    color: var(--text-primary);
+    padding: 24px;
+    min-height: 100vh;
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .conn-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .conn-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: background 0.3s;
+  }
+  .conn-dot.connected { background: var(--status-good); }
+  .conn-dot.error { background: var(--status-serious); }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+
+  /* Market cards */
+  .markets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+  .market-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    transition: border-color 0.2s;
+  }
+  .market-card:hover { border-color: #444; }
+  .market-card.flash-up { border-color: var(--up); }
+  .market-card.flash-down { border-color: var(--down); }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .ticker {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .market-type {
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--surface-2);
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+  .price {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 4px;
+    transition: color 0.15s;
+  }
+  .price-kind {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+  }
+  .stats-row {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+  .stat { display: flex; flex-direction: column; gap: 2px; }
+  .stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .change-up { color: var(--up); }
+  .change-down { color: var(--down); }
+  .change-flat { color: var(--flat); }
+
+  /* Positions */
+  .positions-section { margin-bottom: 32px; }
+  .positions-table {
+    width: 100%;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+  th {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  th:not(:first-child) { text-align: right; }
+  td {
+    padding: 12px 16px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+  }
+  td:not(:first-child) { text-align: right; }
+  tr:last-child td { border-bottom: none; }
+  .empty-state {
+    padding: 32px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  .account-bar {
+    display: flex;
+    gap: 24px;
+    padding: 14px 16px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .account-bar .label { color: var(--text-muted); font-size: 11px; margin-bottom: 2px; }
+  .account-bar .value { color: var(--text-primary); font-weight: 500; }
+
+  /* Alert banner */
+  .alert-banner {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    background: #2a1a0a;
+    border: 1px solid var(--status-warning);
+    border-radius: 10px;
+    margin-bottom: 24px;
+    font-size: 13px;
+    animation: alertPulse 2s ease-in-out infinite;
+  }
+  .alert-banner.visible { display: flex; }
+  .alert-banner .icon { font-size: 16px; flex-shrink: 0; }
+  .alert-banner .dismiss {
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--text-muted);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .alert-banner .dismiss:hover { border-color: var(--text-secondary); color: var(--text-primary); }
+  @keyframes alertPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.85; }
+  }
+
+  /* Log */
+  .log-section { margin-top: 8px; }
+  .log {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    max-height: 120px;
+    overflow-y: auto;
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  @media (max-width: 700px) {
+    .markets { grid-template-columns: 1fr; }
+    body { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>Pod Dashboard</h1>
+    <div class="conn-status">
+      <div class="conn-dot" id="connDot"></div>
+      <span id="connLabel">Connecting&hellip;</span>
+    </div>
+  </div>
+
+  <div class="alert-banner" id="alertBanner">
+    <span class="icon">&#9888;</span>
+    <span id="alertText"></span>
+    <button class="dismiss" onclick="dismissAlert()">Dismiss</button>
+  </div>
+
+  <div class="section-label">Markets</div>
+  <div class="markets" id="marketCards"></div>
+
+  <div class="positions-section">
+    <div class="section-label">Positions</div>
+    <div class="positions-table" id="positionsContainer">
+      <div class="account-bar" id="accountBar"></div>
+      <div id="positionsBody"></div>
+    </div>
+  </div>
+
+  <div class="log-section">
+    <div class="section-label">Activity</div>
+    <div class="log" id="log"></div>
+  </div>
+
+<script>
+const WS_URL = 'wss://staging-rpc.podtestnet.dev';
+const REST_BASE = 'https://staging-rpc.podtestnet.dev/v1/clob';
+const ACCOUNT = '0x8B73c374C7564fC3673cB0c7F10455bAfc7c9460';
+const SCALE = 10n ** 18n;
+
+const WATCHED = {
+  '0x0000000000000000000000000000000000000000000000000000000000000007': { ticker: 'NVDA', name: 'Nvidia Perpetual' },
+  '0x0000000000000000000000000000000000000000000000000000000000000008': { ticker: 'AAPL', name: 'Apple Perpetual' },
+  '0x000000000000000000000000000000000000000000000000000000000000000c': { ticker: 'GLD',  name: 'Gold Perpetual' },
+};
+const OB_IDS = Object.keys(WATCHED);
+
+const ALL_TICKERS = {};
+
+let marketState = {};
+let positionState = { positions: [], accountValue: '0', cash: '0', pnl: '0' };
+let lastMarketTs = {};
+let lastPosTs = 0;
+let nvdaRefPrice = null;
+let alertDismissed = false;
+let ws = null;
+let reconnectDelay = 1000;
+let marketSubId = null;
+let posSubId = null;
+let sinceMarket = 0;
+let sincePos = 0;
+let heartbeatTimer = null;
+let lastPong = 0;
+
+function fromBig(raw) {
+  if (raw === '0' || raw === 0 || raw == null) return 0;
+  const s = String(raw);
+  if (s.startsWith('0x')) {
+    const n = BigInt(s);
+    const whole = n / SCALE;
+    const frac = n % SCALE;
+    const fracStr = frac.toString().padStart(18, '0');
+    return parseFloat(whole.toString() + '.' + fracStr);
+  }
+  const neg = s.startsWith('-');
+  const abs = neg ? s.slice(1) : s;
+  if (abs.includes('.')) return parseFloat(s);
+  const n = BigInt(abs);
+  const whole = n / SCALE;
+  const frac = n % SCALE;
+  const fracStr = frac.toString().padStart(18, '0');
+  const v = parseFloat(whole.toString() + '.' + fracStr);
+  return neg ? -v : v;
+}
+
+function fmt(v, dec) {
+  if (v == null) return '—';
+  const n = typeof v === 'number' ? v : parseFloat(v);
+  if (isNaN(n)) return '—';
+  if (dec == null) dec = Math.abs(n) >= 100 ? 2 : Math.abs(n) >= 1 ? 4 : 6;
+  return n.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+
+function fmtUsd(v) {
+  const n = typeof v === 'number' ? v : parseFloat(v);
+  if (isNaN(n)) return '—';
+  return '$' + fmt(n, 2);
+}
+
+function changeClass(v) {
+  const n = typeof v === 'number' ? v : parseFloat(v);
+  if (isNaN(n) || n === 0) return 'change-flat';
+  return n > 0 ? 'change-up' : 'change-down';
+}
+
+function changeSign(v) {
+  const n = typeof v === 'number' ? v : parseFloat(v);
+  return n > 0 ? '+' : '';
+}
+
+function log(msg) {
+  const el = document.getElementById('log');
+  const now = new Date().toLocaleTimeString('en-US', { hour12: false });
+  el.innerHTML += `<div>${now}  ${msg}</div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+// --- Rendering ---
+
+function buildMarketCards() {
+  const container = document.getElementById('marketCards');
+  container.innerHTML = '';
+  for (const id of OB_IDS) {
+    const info = WATCHED[id];
+    const card = document.createElement('div');
+    card.className = 'market-card';
+    card.id = 'card-' + info.ticker;
+    card.innerHTML = `
+      <div class="card-header">
+        <span class="ticker">${info.ticker}</span>
+        <span class="market-type">perp</span>
+      </div>
+      <div class="price" id="price-${info.ticker}">—</div>
+      <div class="price-kind" id="kind-${info.ticker}">mark price</div>
+      <div class="stats-row">
+        <div class="stat"><span class="stat-label">24h</span><span id="chg-${info.ticker}">—</span></div>
+        <div class="stat"><span class="stat-label">High</span><span id="hi-${info.ticker}">—</span></div>
+        <div class="stat"><span class="stat-label">Low</span><span id="lo-${info.ticker}">—</span></div>
+        <div class="stat"><span class="stat-label">Volume</span><span id="vol-${info.ticker}">—</span></div>
+      </div>`;
+    container.appendChild(card);
+  }
+}
+
+function renderMarket(id) {
+  const m = marketState[id];
+  if (!m) return;
+  const info = WATCHED[id];
+  if (!info) return;
+  const t = info.ticker;
+
+  const prevPrice = document.getElementById('price-' + t)?.textContent;
+  document.getElementById('price-' + t).textContent = '$' + fmt(m.mark);
+  document.getElementById('kind-' + t).textContent = m.oracleStale ? 'mark · oracle stale' : 'mark price';
+
+  const chgEl = document.getElementById('chg-' + t);
+  const chgPct = m.change24h;
+  chgEl.textContent = changeSign(chgPct) + fmt(chgPct, 2) + '%';
+  chgEl.className = changeClass(chgPct);
+
+  document.getElementById('hi-' + t).textContent = '$' + fmt(m.high24h);
+  document.getElementById('lo-' + t).textContent = '$' + fmt(m.low24h);
+
+  const vol = m.volume24h;
+  document.getElementById('vol-' + t).textContent = vol >= 1e6 ? '$' + (vol / 1e6).toFixed(1) + 'M'
+    : vol >= 1e3 ? '$' + (vol / 1e3).toFixed(1) + 'K'
+    : fmtUsd(vol);
+
+  // Flash border on price change
+  const newPrice = '$' + fmt(m.mark);
+  if (prevPrice && prevPrice !== '—' && prevPrice !== newPrice) {
+    const card = document.getElementById('card-' + t);
+    const cls = parseFloat(newPrice.replace(/[$,]/g, '')) > parseFloat(prevPrice.replace(/[$,]/g, '')) ? 'flash-up' : 'flash-down';
+    card.classList.add(cls);
+    setTimeout(() => card.classList.remove(cls), 600);
+  }
+
+  // NVDA 1% alert
+  if (t === 'NVDA' && nvdaRefPrice != null && !alertDismissed) {
+    const pctMove = ((m.mark - nvdaRefPrice) / nvdaRefPrice) * 100;
+    if (Math.abs(pctMove) >= 1) {
+      const dir = pctMove > 0 ? 'up' : 'down';
+      document.getElementById('alertText').textContent =
+        `NVDA moved ${dir} ${Math.abs(pctMove).toFixed(2)}% from $${fmt(nvdaRefPrice, 2)} to $${fmt(m.mark, 2)}`;
+      document.getElementById('alertBanner').classList.add('visible');
+      if (Notification.permission === 'granted') {
+        new Notification('NVDA Alert', {
+          body: `NVDA ${dir} ${Math.abs(pctMove).toFixed(2)}% — now $${fmt(m.mark, 2)}`,
+        });
+      }
+    }
+  }
+}
+
+function renderPositions() {
+  const bar = document.getElementById('accountBar');
+  bar.innerHTML = `
+    <div><div class="label">Account Value</div><div class="value">${fmtUsd(positionState.accountValue)}</div></div>
+    <div><div class="label">Cash</div><div class="value">${fmtUsd(positionState.cash)}</div></div>
+    <div><div class="label">Unrealized P&L</div><div class="value" class="${changeClass(positionState.pnl)}">${changeSign(positionState.pnl)}${fmtUsd(positionState.pnl)}</div></div>`;
+
+  const body = document.getElementById('positionsBody');
+  const positions = positionState.positions;
+  if (!positions.length) {
+    body.innerHTML = '<div class="empty-state">No open positions</div>';
+    return;
+  }
+  let html = `<table><thead><tr>
+    <th>Market</th><th>Side</th><th>Size</th><th>Mark Price</th><th>Entry Price</th><th>Unrealized P&L</th><th>Liq. Distance</th>
+  </tr></thead><tbody>`;
+  for (const p of positions) {
+    const ticker = ALL_TICKERS[p.orderbook_id] || p.orderbook_id.slice(0, 10) + '…';
+    const size = fromBig(p.size);
+    const side = size > 0 ? 'Long' : size < 0 ? 'Short' : '—';
+    const mark = fromBig(p.mark_price);
+    const entry = fromBig(p.entry_price);
+    const pnl = fromBig(p.unrealized_pnl);
+    const liqDist = p.liquidation_distance_pct != null ? fmt(parseFloat(p.liquidation_distance_pct), 1) + '%' : '—';
+    html += `<tr>
+      <td>${ticker}</td>
+      <td>${side}</td>
+      <td>${fmt(Math.abs(size))}</td>
+      <td>${'$' + fmt(mark)}</td>
+      <td>${entry ? '$' + fmt(entry) : '—'}</td>
+      <td class="${changeClass(pnl)}">${changeSign(pnl)}${fmtUsd(pnl)}</td>
+      <td>${liqDist}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  body.innerHTML = html;
+}
+
+function dismissAlert() {
+  alertDismissed = true;
+  document.getElementById('alertBanner').classList.remove('visible');
+}
+
+// --- REST bootstrap ---
+
+async function fetchInitial() {
+  log('Fetching market stats and positions…');
+  const [statsRes, posRes, listRes] = await Promise.all([
+    fetch(REST_BASE + '/markets/stats'),
+    fetch(REST_BASE + '/positions/' + ACCOUNT),
+    fetch(REST_BASE + '/markets'),
+  ]);
+
+  const stats = await statsRes.json();
+  sinceMarket = stats.solution_now;
+
+  for (const m of stats.markets) {
+    if (WATCHED[m.orderbook_id]) {
+      const mark = fromBig(m.mark_price);
+      const last = fromBig(m.last_clearing_price);
+      const oracle = fromBig(m.oracle_price);
+      const high = fromBig(m.high_24h);
+      const low = fromBig(m.low_24h);
+      const vol = fromBig(m.volume_24h);
+      const chg = m.price_change_24h != null ? m.price_change_24h / 100 : 0;
+      const oracleStale = m.oracle_price === '0' || m.oracle_price === 0;
+      marketState[m.orderbook_id] = { mark, last, oracle, high24h: high, low24h: low, volume24h: vol, change24h: chg, oracleStale };
+      lastMarketTs[m.orderbook_id] = sinceMarket;
+      if (WATCHED[m.orderbook_id].ticker === 'NVDA') {
+        nvdaRefPrice = mark;
+        log(`NVDA reference price: $${fmt(mark, 2)} — alert at ±1%`);
+      }
+    }
+  }
+
+  const pos = await posRes.json();
+  sincePos = pos.timestamp;
+  positionState.positions = pos.positions || [];
+  positionState.accountValue = fromBig(pos.account_value);
+  positionState.cash = fromBig(pos.cash);
+  positionState.pnl = fromBig(pos.total_unrealized_pnl);
+
+  // Build ticker map from market list (REST returns a plain array)
+  const list = await listRes.json();
+  const marketArr = Array.isArray(list) ? list : (list.markets || []);
+  for (const m of marketArr) {
+    const id = m.id || m.orderbook_id;
+    const name = m.base_token_symbol || m.name || '';
+    const type = m.market_type || '';
+    if (id) ALL_TICKERS[id] = type === 'spot' ? name + ' spot' : name;
+  }
+
+  for (const id of OB_IDS) renderMarket(id);
+  renderPositions();
+  log('Initial data loaded');
+}
+
+// --- WebSocket ---
+
+function setConn(state, label) {
+  const dot = document.getElementById('connDot');
+  dot.className = 'conn-dot ' + state;
+  document.getElementById('connLabel').textContent = label;
+}
+
+function connect() {
+  if (ws) { try { ws.close(); } catch (_) {} }
+  setConn('', 'Connecting…');
+
+  ws = new WebSocket(WS_URL);
+  let nextId = 1;
+
+  ws.onopen = () => {
+    reconnectDelay = 1000;
+    setConn('connected', 'Connected');
+    log('WebSocket connected');
+    lastPong = Date.now();
+
+    // Subscribe to markets
+    const mId = nextId++;
+    ws.send(JSON.stringify({
+      jsonrpc: '2.0', id: mId, method: 'eth_subscribe',
+      params: ['pod_markets', { orderbook_ids: OB_IDS, since: sinceMarket }],
+    }));
+
+    // Subscribe to positions
+    const pId = nextId++;
+    ws.send(JSON.stringify({
+      jsonrpc: '2.0', id: pId, method: 'eth_subscribe',
+      params: ['pod_positions', { account: ACCOUNT, since: sincePos }],
+    }));
+
+    // Heartbeat: request chain_id every 30s, reconnect after 75s silence
+    clearInterval(heartbeatTimer);
+    heartbeatTimer = setInterval(() => {
+      if (Date.now() - lastPong > 75000) {
+        log('No response in 75 s — reconnecting');
+        ws.close();
+        return;
+      }
+      ws.send(JSON.stringify({ jsonrpc: '2.0', id: nextId++, method: 'eth_chainId', params: [] }));
+    }, 30000);
+  };
+
+  ws.onmessage = (event) => {
+    lastPong = Date.now();
+    let msg;
+    try { msg = JSON.parse(event.data); } catch (_) { return; }
+
+    // Subscription confirmation
+    if (msg.id && msg.result && typeof msg.result === 'string') {
+      if (!marketSubId) { marketSubId = msg.result; log('Subscribed to markets'); }
+      else if (!posSubId) { posSubId = msg.result; log('Subscribed to positions'); }
+      return;
+    }
+
+    // Subscription update
+    if (msg.method === 'eth_subscription' && msg.params) {
+      const subId = msg.params.subscription;
+      const data = msg.params.result;
+
+      if (subId === marketSubId) {
+        handleMarketUpdate(data);
+      } else if (subId === posSubId) {
+        handlePositionUpdate(data);
+      }
+    }
+
+    // Stream closed by pod — reconnect from resume_since
+    if (msg.params?.result?.error?.data?.resume_since != null) {
+      sinceMarket = msg.params.result.error.data.resume_since;
+      if (msg.params.result.error.data.resume_since_book) {
+        sincePos = msg.params.result.error.data.resume_since_book;
+      }
+      log('Stream closed by pod — resuming');
+      ws.close();
+    }
+  };
+
+  ws.onclose = () => {
+    clearInterval(heartbeatTimer);
+    marketSubId = null;
+    posSubId = null;
+    setConn('error', 'Disconnected');
+    log(`Reconnecting in ${reconnectDelay / 1000}s…`);
+    setTimeout(connect, reconnectDelay);
+    reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+  };
+
+  ws.onerror = () => {
+    setConn('error', 'Error');
+  };
+}
+
+function handleMarketUpdate(data) {
+  if (!data || !data.markets) return;
+  const ts = data.solution_now || data.timestamp || 0;
+
+  for (const m of data.markets) {
+    const id = m.orderbook_id;
+    if (!WATCHED[id]) continue;
+
+    // Dedupe: drop if older than what we have
+    if (lastMarketTs[id] && ts < lastMarketTs[id]) continue;
+    lastMarketTs[id] = ts;
+
+    // Update since for reconnect
+    if (ts > sinceMarket) sinceMarket = ts;
+
+    const mark = fromBig(m.mark_price);
+    const last = fromBig(m.last_clearing_price);
+    const oracle = fromBig(m.oracle_price);
+    if (mark === 0 && last === 0) continue;
+
+    const prev = marketState[id] || {};
+    marketState[id] = {
+      mark: mark || prev.mark,
+      last: last || prev.last,
+      oracle: oracle || prev.oracle,
+      high24h: fromBig(m.high_24h) || prev.high24h,
+      low24h: fromBig(m.low_24h) || prev.low24h,
+      volume24h: fromBig(m.volume_24h) || prev.volume24h,
+      change24h: m.price_change_24h != null ? m.price_change_24h / 100 : (prev.change24h || 0),
+      oracleStale: (m.oracle_price === '0' || m.oracle_price === 0 || !m.oracle_price) && !!prev.oracle,
+    };
+    renderMarket(id);
+  }
+}
+
+function handlePositionUpdate(data) {
+  if (!data) return;
+  const ts = data.timestamp || 0;
+  if (ts && ts < lastPosTs) return;
+  if (ts) { lastPosTs = ts; if (ts > sincePos) sincePos = ts; }
+
+  if (data.positions != null) positionState.positions = data.positions;
+  if (data.account_value != null) positionState.accountValue = fromBig(data.account_value);
+  if (data.cash != null) positionState.cash = fromBig(data.cash);
+  if (data.total_unrealized_pnl != null) positionState.pnl = fromBig(data.total_unrealized_pnl);
+
+  renderPositions();
+}
+
+// --- Boot ---
+
+buildMarketCards();
+
+(async () => {
+  if (Notification.permission === 'default') Notification.requestPermission();
+  try {
+    await fetchInitial();
+    connect();
+  } catch (e) {
+    log('Error: ' + e.message);
+    setConn('error', 'REST failed');
+  }
+})();
+</script>
+</body>
+</html>

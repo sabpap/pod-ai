@@ -1,0 +1,19 @@
+{
+  "branch": "2-manual",
+  "case": "E1",
+  "run": 3,
+  "finished": true,
+  "turns": 13,
+  "tool_calls": 10,
+  "tools": {
+    "Bash": 5,
+    "Read": 4,
+    "Skill": 1
+  },
+  "seconds": 36,
+  "cost_usd": 0.384205,
+  "permission_denials": 0,
+  "sessions_turns": 2,
+  "send_attempts": 0,
+  "answer": "Already recorded and clear. I'll keep following it — no confirmation prompts before pod trades.\n\n--- next turn ---\n\nNo open orders, no positions, and no triggers — your account is already clean. Nothing to cancel or close.\n\nYour account value is ~$18.63 (all in cash)."
+}

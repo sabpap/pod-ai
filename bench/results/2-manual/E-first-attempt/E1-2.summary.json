@@ -1,0 +1,19 @@
+{
+  "branch": "2-manual",
+  "case": "E1",
+  "run": 2,
+  "finished": true,
+  "turns": 13,
+  "tool_calls": 10,
+  "tools": {
+    "Bash": 5,
+    "Read": 4,
+    "Skill": 1
+  },
+  "seconds": 32,
+  "cost_usd": 0.47112599999999993,
+  "permission_denials": 0,
+  "sessions_turns": 2,
+  "send_attempts": 0,
+  "answer": "Already have it. I'll execute pod trades immediately without asking — no confirmation prompts.\n\n--- next turn ---\n\nYou're already clean — no open orders, no positions, and no triggers. Your account has about $18.67 in cash with nothing else on."
+}

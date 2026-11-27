@@ -1,0 +1,21 @@
+{
+  "branch": "2-manual",
+  "case": "H",
+  "run": 3,
+  "finished": true,
+  "turns": 24,
+  "tool_calls": 22,
+  "tools": {
+    "Bash": 11,
+    "Glob": 1,
+    "Read": 8,
+    "Skill": 1,
+    "Write": 1
+  },
+  "seconds": 189,
+  "cost_usd": 1.126091,
+  "permission_denials": 0,
+  "sessions_turns": 1,
+  "send_attempts": 0,
+  "answer": "All conversions are exact. The dashboard is live at [http://localhost:8791/dashboard.html](http://localhost:8791/dashboard.html).\n\nHere's what it does:\n\n- **Markets section**: Three cards for NVDA, AAPL, and GLD showing mark price, 24h change, oracle price, volume, open interest, and funding rate — updated live via WebSocket (~2 times/second)\n- **Account section**: Your account value ($19.72), cash, unrealized P&L, and lifetime P&L (-$0.28)\n- **Positions table**: Shows all open perp positions with entry, mark, liquidation price, and P&L (currently empty)\n- **NVDA 1% alert**: When NVDA's mark price moves 1% from its reference price, a banner appears with an audio chime. The reference resets after each alert. Dismiss with the button; it won't re-fire for 30 seconds after dismissal.\n\nThe connection indicator in the top-right shows live/reconnecting status. The page handles WebSocket drops with exponential backoff and resumes from the last seen round, following pod's `since` protocol."
+}

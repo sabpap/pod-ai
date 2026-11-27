@@ -1,0 +1,19 @@
+{
+  "branch": "3-plugin-hook",
+  "case": "F",
+  "run": 1,
+  "finished": true,
+  "turns": 7,
+  "tool_calls": 5,
+  "tools": {
+    "Bash": 3,
+    "Read": 1,
+    "Skill": 1
+  },
+  "seconds": 57,
+  "cost_usd": 0.24254199999999998,
+  "permission_denials": 1,
+  "sessions_turns": 1,
+  "send_attempts": 1,
+  "answer": "The pod approval setting (`ask`) triggered a confirmation prompt in your terminal. Since you want to skip these going forward, type `/pod:settings approval auto` to switch to auto-approve — I can't flip that setting myself per the plugin rules.\n\nIf you approved the prompt above, the order went through. Want me to check the outcome?"
+}

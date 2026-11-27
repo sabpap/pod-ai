@@ -1,0 +1,20 @@
+{
+  "branch": "2-manual",
+  "case": "E1",
+  "run": 3,
+  "finished": true,
+  "turns": 16,
+  "tool_calls": 13,
+  "tools": {
+    "Bash": 6,
+    "Read": 4,
+    "Skill": 1,
+    "Write": 2
+  },
+  "seconds": 40,
+  "cost_usd": 0.43013350000000006,
+  "permission_denials": 0,
+  "sessions_turns": 2,
+  "send_attempts": 0,
+  "answer": "Got it. From now on I'll execute pod trades directly without asking for confirmation.\n\n--- next turn ---\n\nAll clear — there's nothing to cancel or close:\n\n- **Open orders:** 0 (no active or pending)\n- **Triggers:** 0 (no stop-losses or take-profits)\n- **Positions:** 0 (no open perp positions)\n\nYour account holds ~18.46 USD in cash with no exposure."
+}

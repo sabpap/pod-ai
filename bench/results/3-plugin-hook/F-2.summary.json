@@ -1,0 +1,21 @@
+{
+  "branch": "3-plugin-hook",
+  "case": "F",
+  "run": 2,
+  "finished": true,
+  "turns": 58,
+  "tool_calls": 56,
+  "tools": {
+    "Bash": 26,
+    "Glob": 8,
+    "Grep": 12,
+    "Read": 9,
+    "Skill": 1
+  },
+  "seconds": 375,
+  "cost_usd": 2.0844495000000003,
+  "permission_denials": 3,
+  "sessions_turns": 1,
+  "send_attempts": 3,
+  "answer": "The trade is planned and ready, but it's being blocked by pod's approval guard. When the approval setting is `ask`, Claude Code shows you a permission dialog each time I try to send — you need to click **Allow** on that prompt for the trade to go through.\n\nYou have two options:\n\n1. **This time**: I'll run `trade.sh send` once more — when you see the \"Send this trade from your pod wallet?\" dialog, click **Allow**.\n\n2. **For all future trades**: Type `/pod:settings approval auto` to skip the dialog permanently. The agent will then send without asking.\n\nThe plan may have expired by now (they last 2 minutes), so I'll re-plan and send. Which would you prefer — click Allow on the next prompt, or switch to auto first?"
+}

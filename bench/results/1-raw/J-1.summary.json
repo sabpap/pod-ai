@@ -1,0 +1,22 @@
+{
+  "branch": "1-raw",
+  "case": "J",
+  "run": 1,
+  "finished": true,
+  "turns": 137,
+  "tool_calls": 138,
+  "tools": {
+    "Agent": 3,
+    "Bash": 129,
+    "Edit": 1,
+    "Skill": 1,
+    "WebFetch": 3,
+    "Write": 1
+  },
+  "seconds": 1054,
+  "cost_usd": 7.278594389999996,
+  "permission_denials": 0,
+  "sessions_turns": 1,
+  "send_attempts": 26,
+  "answer": "---\n\n## Trading Session Report\n\n| Metric | Value |\n|---|---|\n| Duration | ~15 minutes (09:16 – 09:31) |\n| Trades executed | **50** (all 50 filled, 0 rejected) |\n| Starting balance | $17.38 |\n| Ending balance | $16.82 |\n| **Session P&L** | **-$0.56** |\n| Fees paid | $0.11 |\n| Open positions | 0 |\n| Active orders | 0 |\n\n**Markets traded:** NVDA, AAPL, GOOGL, QQQ, SPY, GLD, KEYENCE, SMIC, Kuaishou, Tencent, NAVER, Samsung, SPCX (13 markets)\n\n### What went wrong\n\n1. **AMM spread + fees ate most of the edge.** Each round-trip cost ~$0.02-0.03 in fees and slippage. With $5 positions and tiny price moves (<0.5%), that's a massive drag.\n\n2. **Trend-following on sub-5-minute candles was unreliable.** Signals reversed immediately after entry more often than they continued. The AMM-driven market oscillated in ranges rather than trending.\n\n3. **The 2% limit price buffer was too generous** — it guaranteed fills but accepted unnecessary slippage against the AMM.\n\n4. **Churning destroyed value.** 50 trades in 15 minutes meant paying spread and fees 50 times. A patient approach with fewer, better-timed trades and tighter limits would have lost less.\n\n5. **One early bug** (hex/decimal market ID confusion) accidentally opened KEYENCE instead of GLD — ironically that was the best trade of the session (+$0.05)."
+}

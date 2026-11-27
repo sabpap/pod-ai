@@ -1,0 +1,19 @@
+{
+  "branch": "2-manual",
+  "case": "K",
+  "run": 3,
+  "finished": true,
+  "turns": 21,
+  "tool_calls": 18,
+  "tools": {
+    "Bash": 15,
+    "Read": 2,
+    "Skill": 1
+  },
+  "seconds": 89,
+  "cost_usd": 1.070477,
+  "permission_denials": 0,
+  "sessions_turns": 2,
+  "send_attempts": 1,
+  "answer": "No open positions. Account value is ~$19.77, all free margin. Here's the order preview:\n\n---\n\n**Market order: Buy NVDA perp**\n\n| | |\n|---|---|\n| Market | NVDA/USD perp (`0x…0007`) |\n| Side | Buy (long) |\n| Size | 0.064238 NVDA |\n| Value at mark | ~$10.00 |\n| Worst fill price | $158.78 (mark + 2%) |\n| Taker fee | ~$0.0045 |\n| Margin needed | ~$0.50 (5%) |\n| Free margin | ~$19.77 |\n| Order type | Market, immediate-or-cancel |\n\nThe mark price is $155.67. The order will fill at the round's clearing price (usually near the mark), but no worse than $158.78.\n\n**Send this order?**\n\n--- next turn ---\n\n**Filled.** Bought 0.064238 NVDA at **$156.40** for a total of **$10.05**, fee **$0.0045**. The position is now open long on NVDA perp."
+}

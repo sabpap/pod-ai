@@ -64,3 +64,5 @@ bench/results/*/*.err
 .claude/worktrees/
 bench/results/*/*.out
 bench/results/*/reset.log
+bench/results/**/*.jsonl
+bench/results/**/*.err

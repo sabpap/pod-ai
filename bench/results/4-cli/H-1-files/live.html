@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pod — Live Dashboard</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --surface-page:  #0b0b0b;
+    --surface-card:  #191919;
+    --text-primary:  #efefef;
+    --text-secondary:#9c9c9c;
+    --gridline:      #303030;
+    --baseline:      #474747;
+    --border:        rgba(255,255,255,0.10);
+
+    --series-nvda:   #338ced;
+    --series-aapl:   #e76624;
+    --series-gld:    #00a888;
+
+    --good:          #53c556;
+    --serious:       #f18a59;
+    --critical:      #dc3c3d;
+    --warning:       #fbb315;
+
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--surface-page);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { padding: 24px 32px; max-width: 1120px; margin: 0 auto; }
+
+  header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 24px; }
+  header h1 { font-size: 18px; font-weight: 600; }
+  .conn-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--critical);
+    display: inline-block; flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .conn-dot.ok { background: var(--good); }
+  .conn-label { font-size: 12px; color: var(--text-secondary); }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+  .full { grid-column: 1 / -1; }
+
+  .card {
+    background: var(--surface-card);
+    border: 1px solid var(--gridline);
+    border-radius: 8px;
+    padding: 16px 20px;
+  }
+  .card h2 {
+    font-size: 12px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--text-secondary); margin-bottom: 12px;
+  }
+
+  /* ── stat tiles ── */
+  .stat-row { display: flex; gap: 24px; flex-wrap: wrap; }
+  .stat { min-width: 100px; }
+  .stat-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 2px; }
+  .stat-value { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .stat-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+  /* ── market cards ── */
+  .market-card { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  .market-name { font-size: 15px; font-weight: 600; }
+  .market-price { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .market-detail { font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .market-detail span + span::before { content: " · "; }
+  .chg-up { color: var(--good); }
+  .chg-down { color: var(--critical); }
+  .chg-flat { color: var(--text-secondary); }
+
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+  /* ── positions table ── */
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th { text-align: left; font-size: 11px; font-weight: 500; color: var(--text-secondary);
+       padding: 0 0 8px; border-bottom: 1px solid var(--gridline); }
+  td { padding: 8px 0; border-bottom: 1px solid var(--gridline); font-size: 13px; }
+  tr:last-child td { border-bottom: none; }
+  .empty-state { color: var(--text-secondary); font-size: 13px; padding: 12px 0; }
+
+  /* ── alert banner ── */
+  .alert-banner {
+    position: fixed; top: 0; left: 0; right: 0;
+    background: var(--warning); color: #0b0b0b;
+    text-align: center; font-weight: 600; font-size: 14px;
+    padding: 10px 16px; z-index: 100;
+    transform: translateY(-100%); transition: transform 0.3s ease;
+  }
+  .alert-banner.show { transform: translateY(0); }
+  .alert-banner button {
+    background: none; border: 1px solid #0b0b0b; color: #0b0b0b;
+    border-radius: 4px; padding: 2px 10px; margin-left: 12px;
+    cursor: pointer; font-size: 12px; font-weight: 600;
+  }
+
+  /* ── alert log ── */
+  .alert-log { max-height: 120px; overflow-y: auto; }
+  .alert-entry { font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--gridline); }
+  .alert-entry:last-child { border-bottom: none; }
+  .alert-time { color: var(--text-secondary); margin-right: 8px; }
+</style>
+</head>
+<body>
+
+<div class="alert-banner" id="alertBanner">
+  <span id="alertText"></span>
+  <button onclick="dismissAlert()">Dismiss</button>
+</div>
+
+<header>
+  <h1>Pod Live</h1>
+  <span class="conn-dot" id="connDot"></span>
+  <span class="conn-label" id="connLabel">connecting…</span>
+</header>
+
+<div class="grid">
+  <!-- Account overview -->
+  <div class="card full">
+    <h2>Account</h2>
+    <div class="stat-row" id="accountStats">
+      <div class="stat">
+        <div class="stat-label">Value</div>
+        <div class="stat-value" id="acctValue">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Cash</div>
+        <div class="stat-value" id="acctCash">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Unrealised PnL</div>
+        <div class="stat-value" id="acctPnl">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Positions</div>
+        <div class="stat-value" id="acctPosCount">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Markets -->
+  <div class="card" id="card-nvda">
+    <h2><span class="dot" style="background:var(--series-nvda)"></span> NVDA Perp</h2>
+    <div class="market-card">
+      <span class="market-price" id="price-nvda">—</span>
+      <div class="market-detail" id="detail-nvda"></div>
+    </div>
+  </div>
+  <div class="card" id="card-aapl">
+    <h2><span class="dot" style="background:var(--series-aapl)"></span> AAPL Perp</h2>
+    <div class="market-card">
+      <span class="market-price" id="price-aapl">—</span>
+      <div class="market-detail" id="detail-aapl"></div>
+    </div>
+  </div>
+  <div class="card" id="card-gld">
+    <h2><span class="dot" style="background:var(--series-gld)"></span> GLD Perp</h2>
+    <div class="market-card">
+      <span class="market-price" id="price-gld">—</span>
+      <div class="market-detail" id="detail-gld"></div>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  <div class="card" id="card-alerts">
+    <h2>NVDA 1% Alert</h2>
+    <div class="stat-row" style="margin-bottom:12px">
+      <div class="stat">
+        <div class="stat-label">Anchor price</div>
+        <div class="stat-value" id="alertAnchor">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Move from anchor</div>
+        <div class="stat-value" id="alertMove">—</div>
+      </div>
+    </div>
+    <div class="alert-log" id="alertLog">
+      <div class="empty-state">No alerts yet</div>
+    </div>
+  </div>
+
+  <!-- Positions -->
+  <div class="card full">
+    <h2>Positions</h2>
+    <div id="positionsBody">
+      <div class="empty-state">No open positions</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const REST  = 'https://staging-rpc.podtestnet.dev/v1';
+const WS    = 'wss://staging-rpc.podtestnet.dev';
+const ACCT  = '0x90ae43963c0cE6e1307195a31a1EcD8bCC0451f3';
+
+const MARKETS = {
+  '0x0000000000000000000000000000000000000000000000000000000000000007': { key: 'nvda', name: 'NVDA' },
+  '0x0000000000000000000000000000000000000000000000000000000000000008': { key: 'aapl', name: 'AAPL' },
+  '0x000000000000000000000000000000000000000000000000000000000000000c': { key: 'gld',  name: 'GLD'  },
+};
+const OB_IDS = Object.keys(MARKETS);
+const NVDA_ID = OB_IDS[0];
+const SCALE = 1e18;
+
+let ws = null;
+let subIds = {};
+let lastRoundMarkets = 0;
+let lastRoundPositions = 0;
+let nvdaAnchor = null;
+let alertFired = new Set();
+
+// ── helpers ──
+
+function wei(s) { return Number(BigInt(s)) / SCALE; }
+function usd(n, dec = 2) {
+  if (n == null || isNaN(n)) return '—';
+  return '$' + n.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+function pct(n) {
+  if (n == null || isNaN(n)) return '';
+  const s = n >= 0 ? '+' : '';
+  return s + n.toFixed(2) + '%';
+}
+function chgClass(n) { return n > 0 ? 'chg-up' : n < 0 ? 'chg-down' : 'chg-flat'; }
+function timeStr() {
+  return new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+// ── DOM updates ──
+
+function renderMarket(id, data) {
+  const m = MARKETS[id];
+  if (!m) return;
+  const mark = wei(data.mark_price);
+  const last = wei(data.last_clearing_price);
+  const oracle = wei(data.oracle_price);
+  const chg = data.price_change_24h / 100;
+  const hi = wei(data.high_24h);
+  const lo = wei(data.low_24h);
+  const vol = wei(data.volume_24h);
+  const oi = data.open_interest ? wei(data.open_interest) : null;
+  const fr = data.funding_rate ? (Number(BigInt(data.funding_rate)) / 1e16) : null;
+
+  document.getElementById('price-' + m.key).textContent = usd(mark);
+  const detail = document.getElementById('detail-' + m.key);
+  detail.innerHTML = `
+    <span class="${chgClass(chg)}">${pct(chg)}</span>
+    <span>Last ${usd(last)}</span>
+    <span>Oracle ${usd(oracle)}</span>
+    <span>H ${usd(hi)} / L ${usd(lo)}</span>
+    ${fr != null ? `<span>Funding ${fr.toFixed(4)}%</span>` : ''}
+    ${vol ? `<span>Vol ${usd(vol, 0)}</span>` : ''}
+  `;
+
+  if (id === NVDA_ID) checkNvdaAlert(mark);
+}
+
+function renderAccount(data) {
+  const val = wei(String(data.account_value || data.perps_equity || '0'));
+  const cash = wei(String(data.cash || '0'));
+  const pnl = wei(String(data.total_unrealized_pnl || '0'));
+  const positions = data.positions || [];
+
+  document.getElementById('acctValue').textContent = usd(val);
+  document.getElementById('acctCash').textContent = usd(cash);
+  document.getElementById('acctPnl').textContent = usd(pnl);
+  document.getElementById('acctPnl').className = 'stat-value ' + chgClass(pnl);
+  document.getElementById('acctPosCount').textContent = positions.length;
+
+  const body = document.getElementById('positionsBody');
+  if (positions.length === 0) {
+    body.innerHTML = '<div class="empty-state">No open positions</div>';
+    return;
+  }
+  let html = `<table><thead><tr>
+    <th>Market</th><th>Side</th><th>Size</th>
+    <th>Mark</th><th>Entry</th><th>Liq. dist.</th><th>PnL</th>
+  </tr></thead><tbody>`;
+  for (const p of positions) {
+    const obId = p.orderbook_id;
+    const m = MARKETS[obId];
+    const name = m ? m.name : obId.slice(0, 10) + '…';
+    const size = wei(String(p.size || '0'));
+    const side = p.side || (size > 0 ? 'long' : 'short');
+    const markP = wei(String(p.mark_price || '0'));
+    const entry = p.entry_price ? wei(String(p.entry_price)) : null;
+    const liqDist = p.liquidation_distance_pct != null ? (Number(p.liquidation_distance_pct) / 100) : null;
+    const upnl = wei(String(p.unrealized_pnl || '0'));
+    html += `<tr>
+      <td>${name}</td>
+      <td>${side}</td>
+      <td>${Math.abs(size).toFixed(4)}</td>
+      <td>${usd(markP)}</td>
+      <td>${entry != null ? usd(entry) : '—'}</td>
+      <td>${liqDist != null ? pct(liqDist) : '—'}</td>
+      <td class="${chgClass(upnl)}">${usd(upnl)}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  body.innerHTML = html;
+}
+
+// ── NVDA 1% alert ──
+
+function checkNvdaAlert(price) {
+  if (nvdaAnchor == null) {
+    nvdaAnchor = price;
+    document.getElementById('alertAnchor').textContent = usd(nvdaAnchor);
+  }
+  const move = ((price - nvdaAnchor) / nvdaAnchor) * 100;
+  const el = document.getElementById('alertMove');
+  el.textContent = pct(move);
+  el.className = 'stat-value ' + chgClass(move);
+
+  if (Math.abs(move) >= 1) {
+    const bucket = Math.floor(Math.abs(move));
+    const dir = move > 0 ? 'up' : 'down';
+    const tag = dir + bucket;
+    if (!alertFired.has(tag)) {
+      alertFired.add(tag);
+      fireAlert(price, move);
+      nvdaAnchor = price;
+      document.getElementById('alertAnchor').textContent = usd(nvdaAnchor);
+      alertFired.clear();
+    }
+  }
+}
+
+function fireAlert(price, move) {
+  const msg = `NVDA ${move > 0 ? '↑' : '↓'} ${Math.abs(move).toFixed(2)}% — now ${usd(price)}`;
+  // banner
+  const banner = document.getElementById('alertBanner');
+  document.getElementById('alertText').textContent = msg;
+  banner.classList.add('show');
+  // browser notification
+  if (Notification.permission === 'granted') {
+    new Notification('Pod — NVDA Alert', { body: msg, tag: 'nvda-alert' });
+  }
+  // log entry
+  const log = document.getElementById('alertLog');
+  if (log.querySelector('.empty-state')) log.innerHTML = '';
+  const entry = document.createElement('div');
+  entry.className = 'alert-entry';
+  entry.innerHTML = `<span class="alert-time">${timeStr()}</span>${msg}`;
+  log.prepend(entry);
+}
+
+function dismissAlert() {
+  document.getElementById('alertBanner').classList.remove('show');
+}
+
+// ── connection status ──
+
+function setConn(ok, label) {
+  const dot = document.getElementById('connDot');
+  const lbl = document.getElementById('connLabel');
+  dot.className = 'conn-dot' + (ok ? ' ok' : '');
+  lbl.textContent = label || (ok ? 'live' : 'disconnected');
+}
+
+// ── REST bootstrap ──
+
+async function bootstrap() {
+  try {
+    const [mRes, pRes] = await Promise.all([
+      fetch(REST + '/clob/markets/stats').then(r => r.json()),
+      fetch(REST + '/clob/positions/' + ACCT).then(r => r.json()),
+    ]);
+
+    // markets
+    lastRoundMarkets = mRes.solution_now || 0;
+    for (const m of (mRes.markets || [])) {
+      if (MARKETS[m.orderbook_id]) renderMarket(m.orderbook_id, m);
+    }
+
+    // positions
+    lastRoundPositions = pRes.timestamp || 0;
+    renderAccount(pRes);
+
+    connect();
+  } catch (e) {
+    setConn(false, 'REST failed — retrying…');
+    setTimeout(bootstrap, 3000);
+  }
+}
+
+// ── WebSocket ──
+
+function connect() {
+  if (ws) { try { ws.close(); } catch(_){} }
+  ws = new WebSocket(WS);
+  ws.onopen = () => {
+    setConn(true, 'subscribing…');
+    subscribe('pod_markets', { orderbook_ids: OB_IDS, since: lastRoundMarkets }, 'markets');
+    subscribe('pod_positions', { account: ACCT, since: lastRoundPositions }, 'positions');
+  };
+  ws.onmessage = (ev) => {
+    let msg;
+    try { msg = JSON.parse(ev.data); } catch(_) { return; }
+
+    if (msg.id && msg.result) {
+      subIds[msg.id] = msg.result;
+      if (Object.keys(subIds).length >= 2) setConn(true, 'live');
+      return;
+    }
+    if (msg.method !== 'eth_subscription' || !msg.params) return;
+    const sub = msg.params.subscription;
+    const data = msg.params.result;
+    if (!data) return;
+
+    // identify channel by subscription id
+    const channel = Object.entries(subIds).find(([_, v]) => v === sub);
+    if (!channel) return;
+    const chId = channel[0];
+
+    if (chId === 'markets') handleMarketUpdate(data);
+    else if (chId === 'positions') handlePositionUpdate(data);
+  };
+  ws.onclose = () => {
+    setConn(false, 'reconnecting…');
+    subIds = {};
+    setTimeout(connect, 2000);
+  };
+  ws.onerror = () => {};
+}
+
+let rpcId = 0;
+function subscribe(channel, opts, tag) {
+  rpcId++;
+  const id = tag || String(rpcId);
+  ws.send(JSON.stringify({ jsonrpc: '2.0', id, method: 'eth_subscribe', params: [channel, opts] }));
+}
+
+function handleMarketUpdate(data) {
+  const markets = data.markets || (data.orderbook_id ? [data] : []);
+  const ts = data.solution_now || data.timestamp;
+  if (ts && ts > lastRoundMarkets) lastRoundMarkets = ts;
+
+  for (const m of markets) {
+    if (MARKETS[m.orderbook_id]) renderMarket(m.orderbook_id, m);
+  }
+}
+
+function handlePositionUpdate(data) {
+  const ts = data.timestamp;
+  if (ts && ts > lastRoundPositions) lastRoundPositions = ts;
+  renderAccount(data);
+}
+
+// ── init ──
+
+if ('Notification' in window && Notification.permission === 'default') {
+  Notification.requestPermission();
+}
+bootstrap();
+</script>
+</body>
+</html>

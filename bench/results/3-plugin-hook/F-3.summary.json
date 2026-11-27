@@ -1,0 +1,19 @@
+{
+  "branch": "3-plugin-hook",
+  "case": "F",
+  "run": 3,
+  "finished": true,
+  "turns": 7,
+  "tool_calls": 5,
+  "tools": {
+    "Bash": 3,
+    "Read": 1,
+    "Skill": 1
+  },
+  "seconds": 61,
+  "cost_usd": 0.17892299999999997,
+  "permission_denials": 1,
+  "sessions_turns": 1,
+  "send_attempts": 1,
+  "answer": "The send triggered a confirmation prompt because your approval setting is `ask`. It looks like the prompt wasn't approved in the UI.\n\nYou have two options:\n1. I'll run the send again — approve the confirmation prompt when it appears\n2. Switch to auto-approval by typing `/pod:settings approval auto`, then I won't need to ask\n\nWant me to try sending again?"
+}

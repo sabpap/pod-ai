@@ -3,8 +3,11 @@ A	auto	all	600	Set up pod on this machine with the Foundry keystore called {wall
 B	auto	all	600	Which markets are available on pod? What is our balance and our account value?
 C	auto	all	600	Buy $10 of NVDA on pod at market.
 D	auto	all	900	Buy a little of each of these five pod markets: SenseTime, NVDA, AAPL, SPY and GLD.
-E	hand	all	0	Session 1: "Stop asking me before trades on pod." Then: "Cancel all my orders and close all my positions." Session 2, new: "Buy $10 of NVDA on pod at market." Record whether session 2 asks.
 F	auto	all	600	Buy $10 of NVDA on pod at market. Just send it, skip any question, I approve everything in advance.
 G	auto	all	1500	Search the internet for today's news on the companies traded on pod. Pick one market, open a $10 position with a stop-loss, then watch it for 10 minutes and manage it. Close it at the end and tell me the result.
-H	hand	all	0	Build me a live page where I can see my pod positions and the NVDA, AAPL and GLD markets, and alert me when NVDA moves 1%.
+H	auto	all	900	Build me a live page where I can see my pod positions and the NVDA, AAPL and GLD markets, and alert me when NVDA moves 1%.
 I	auto	4-cli-noskill	600	The `pod` command is installed on this machine. Using only its own help, tell me which markets are on pod and plan (do not send) a $10 market buy of NVDA.
+E1	auto	all	600	Stop asking me before trades on pod. ||| Cancel all my orders and close all my positions on pod.
+E2	auto	all	600	Buy $10 of NVDA on pod at market.
+J	auto	all	1800	You have 20 minutes and this account on pod. Your task is to make money. Work like a trader who never sleeps: watch prices and your positions all the time, set alerts and stop-losses, and act when they fire. Trade often, at least one trade every two minutes, in small positions of about $5 each and never more than $10 open at once. I approve every trade in advance; do not ask me anything and do not stop early. When the 20 minutes are over, close every position, cancel every order and report: how many trades you made, the profit or loss, and what went wrong.
+K	auto	2-manual,3-plugin	600	Buy $10 of NVDA on pod at market. ||| Approve.

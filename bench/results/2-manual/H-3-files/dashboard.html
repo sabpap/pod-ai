@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pod Dashboard</title>
+<style>
+  :root {
+    --surface-page:    #0b0b0b;
+    --surface-card:    #191919;
+    --text-primary:    #efefef;
+    --text-secondary:  #9c9c9c;
+    --gridline:        #303030;
+    --baseline:        #474747;
+    --border:          rgba(255,255,255,0.10);
+    --series-blue:     #338ced;
+    --series-orange:   #e76624;
+    --series-aqua:     #00a888;
+    --good:            #53c556;
+    --warning:         #fbb315;
+    --critical:        #dc3c3d;
+    --delta-up:        #53c556;
+    --delta-down:      #dc3c3d;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--surface-page);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 24px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 24px;
+  }
+
+  .header .status {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+
+  .status-dot.connected { background: var(--good); }
+  .status-dot.error { background: var(--critical); }
+
+  .section-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+  }
+
+  .market-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .card {
+    background: var(--surface-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .card-symbol {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .card-type {
+    font-size: 11px;
+    color: var(--text-secondary);
+    background: var(--surface-page);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .card-price {
+    font-size: 28px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 4px;
+  }
+
+  .card-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    padding: 2px 0;
+  }
+
+  .card-row + .card-row { border-top: 1px solid var(--gridline); }
+
+  .delta-up { color: var(--delta-up); }
+  .delta-down { color: var(--delta-down); }
+
+  .card-change {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 10px;
+  }
+
+  .alert-banner {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: rgba(220,60,61,0.12);
+    border: 1px solid var(--critical);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    animation: pulse 1.5s ease-in-out 3;
+  }
+
+  .alert-banner.show { display: flex; }
+
+  .alert-banner .alert-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .alert-banner .alert-text {
+    font-size: 13px;
+    flex: 1;
+  }
+
+  .alert-banner .alert-dismiss {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 2px 8px;
+    font-size: 12px;
+  }
+
+  .alert-banner .alert-dismiss:hover { color: var(--text-primary); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  .account-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .stat-tile {
+    background: var(--surface-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+
+  th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--baseline);
+  }
+
+  th:not(:first-child), td:not(:first-child) { text-align: right; }
+
+  td {
+    padding: 10px 12px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--gridline);
+  }
+
+  .empty-state {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 40px 12px;
+    font-size: 13px;
+  }
+
+  .oracle-badge {
+    font-size: 10px;
+    color: var(--warning);
+    margin-left: 4px;
+  }
+
+  .updated-at {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: right;
+    margin-top: 8px;
+  }
+
+  @media (max-width: 640px) {
+    .market-grid { grid-template-columns: 1fr; }
+    .account-bar { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Pod Dashboard</h1>
+  <div class="status">
+    <span class="status-dot" id="ws-dot"></span>
+    <span id="ws-label">connecting&hellip;</span>
+  </div>
+</div>
+
+<div class="alert-banner" id="alert-banner">
+  <span class="alert-icon">&#9888;</span>
+  <span class="alert-text" id="alert-text"></span>
+  <button class="alert-dismiss" onclick="dismissAlert()">Dismiss</button>
+</div>
+
+<div class="section-label">Markets</div>
+<div class="market-grid">
+  <div class="card" id="card-NVDA">
+    <div class="card-header">
+      <span class="card-symbol">NVDA</span>
+      <span class="card-type">perp</span>
+    </div>
+    <div class="card-price" id="price-NVDA">&mdash;</div>
+    <div class="card-change" id="change-NVDA">&mdash;</div>
+    <div class="card-row"><span>Oracle</span><span id="oracle-NVDA">&mdash;</span></div>
+    <div class="card-row"><span>24h volume</span><span id="vol-NVDA">&mdash;</span></div>
+    <div class="card-row"><span>Open interest</span><span id="oi-NVDA">&mdash;</span></div>
+    <div class="card-row"><span>Funding (8h)</span><span id="fund-NVDA">&mdash;</span></div>
+  </div>
+  <div class="card" id="card-AAPL">
+    <div class="card-header">
+      <span class="card-symbol">AAPL</span>
+      <span class="card-type">perp</span>
+    </div>
+    <div class="card-price" id="price-AAPL">&mdash;</div>
+    <div class="card-change" id="change-AAPL">&mdash;</div>
+    <div class="card-row"><span>Oracle</span><span id="oracle-AAPL">&mdash;</span></div>
+    <div class="card-row"><span>24h volume</span><span id="vol-AAPL">&mdash;</span></div>
+    <div class="card-row"><span>Open interest</span><span id="oi-AAPL">&mdash;</span></div>
+    <div class="card-row"><span>Funding (8h)</span><span id="fund-AAPL">&mdash;</span></div>
+  </div>
+  <div class="card" id="card-GLD">
+    <div class="card-header">
+      <span class="card-symbol">GLD</span>
+      <span class="card-type">perp</span>
+    </div>
+    <div class="card-price" id="price-GLD">&mdash;</div>
+    <div class="card-change" id="change-GLD">&mdash;</div>
+    <div class="card-row"><span>Oracle</span><span id="oracle-GLD">&mdash;</span></div>
+    <div class="card-row"><span>24h volume</span><span id="vol-GLD">&mdash;</span></div>
+    <div class="card-row"><span>Open interest</span><span id="oi-GLD">&mdash;</span></div>
+    <div class="card-row"><span>Funding (8h)</span><span id="fund-GLD">&mdash;</span></div>
+  </div>
+</div>
+
+<div class="section-label">Account</div>
+<div class="account-bar">
+  <div class="stat-tile">
+    <div class="stat-label">Account Value</div>
+    <div class="stat-value" id="acct-value">&mdash;</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-label">Cash</div>
+    <div class="stat-value" id="acct-cash">&mdash;</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-label">Unrealized P&L</div>
+    <div class="stat-value" id="acct-upnl">&mdash;</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-label">Lifetime P&L</div>
+    <div class="stat-value" id="acct-lpnl">&mdash;</div>
+  </div>
+</div>
+
+<div class="section-label">Positions</div>
+<div class="card" style="padding: 0; overflow: hidden;">
+  <table>
+    <thead>
+      <tr>
+        <th>Market</th>
+        <th>Side</th>
+        <th>Size</th>
+        <th>Entry</th>
+        <th>Mark</th>
+        <th>Liq. Price</th>
+        <th>Unrealized P&L</th>
+      </tr>
+    </thead>
+    <tbody id="positions-body">
+      <tr><td colspan="7" class="empty-state">No open positions</td></tr>
+    </tbody>
+  </table>
+</div>
+<div class="updated-at" id="last-update"></div>
+
+<script>
+const ACCOUNT = '0x6273a78912005AD6C3c4C1C3154ebAcbFd590d67';
+const REST = 'https://staging-rpc.podtestnet.dev/v1';
+const WS_URL = 'wss://staging-rpc.podtestnet.dev';
+
+const MARKETS = {
+  '0x0000000000000000000000000000000000000000000000000000000000000007': 'NVDA',
+  '0x0000000000000000000000000000000000000000000000000000000000000008': 'AAPL',
+  '0x000000000000000000000000000000000000000000000000000000000000000c': 'GLD',
+};
+const MARKET_IDS = Object.keys(MARKETS);
+
+const SCALE = 10n ** 18n;
+
+function fromPod(v) {
+  if (v == null || v === '') return null;
+  let s = String(v);
+  let neg = false;
+  if (s.startsWith('-')) { neg = true; s = s.slice(1); }
+  let n;
+  if (s.startsWith('0x') || s.startsWith('0X')) {
+    n = BigInt(s);
+  } else {
+    n = BigInt(s);
+  }
+  const whole = n / SCALE;
+  const frac = n % SCALE;
+  let fracStr = frac.toString().padStart(18, '0').replace(/0+$/, '');
+  let result = fracStr ? `${whole}.${fracStr}` : `${whole}`;
+  if (neg && n > 0n) result = '-' + result;
+  return result;
+}
+
+function fmtUsd(podVal) {
+  const str = fromPod(podVal);
+  if (str == null) return '—';
+  const num = parseFloat(str);
+  if (isNaN(num)) return '—';
+  if (Math.abs(num) >= 1e6) return '$' + (num / 1e6).toFixed(2) + 'M';
+  if (Math.abs(num) >= 1e3) return '$' + (num / 1e3).toFixed(2) + 'K';
+  return '$' + num.toFixed(2);
+}
+
+function fmtPrice(podVal) {
+  const str = fromPod(podVal);
+  if (str == null) return '—';
+  const num = parseFloat(str);
+  if (isNaN(num) || num === 0) return '—';
+  return '$' + num.toFixed(2);
+}
+
+function fmtSize(podVal) {
+  const str = fromPod(podVal);
+  if (str == null) return '—';
+  const num = parseFloat(str);
+  if (isNaN(num)) return '—';
+  return Math.abs(num).toFixed(4);
+}
+
+function fmtPnl(podVal) {
+  const str = fromPod(podVal);
+  if (str == null) return { text: '—', cls: '' };
+  const num = parseFloat(str);
+  if (isNaN(num)) return { text: '—', cls: '' };
+  const sign = num >= 0 ? '+' : '';
+  return {
+    text: sign + '$' + Math.abs(num).toFixed(2),
+    cls: num > 0 ? 'delta-up' : num < 0 ? 'delta-down' : ''
+  };
+}
+
+function fmtChange24h(bps) {
+  if (bps == null) return { text: '—', cls: '' };
+  const pct = Number(bps) / 100;
+  const sign = pct >= 0 ? '+' : '';
+  return {
+    text: sign + pct.toFixed(2) + '%',
+    cls: pct > 0 ? 'delta-up' : pct < 0 ? 'delta-down' : ''
+  };
+}
+
+function fmtFunding(rate) {
+  if (rate == null) return '—';
+  const str = fromPod(rate);
+  const num = parseFloat(str);
+  if (isNaN(num)) return '—';
+  return (num * 100).toFixed(4) + '%';
+}
+
+// --- NVDA 1% alert ---
+let nvdaRefPrice = null;
+let alertDismissedAt = 0;
+
+function checkNvdaAlert(markStr) {
+  const mark = parseFloat(fromPod(markStr));
+  if (isNaN(mark) || mark === 0) return;
+  if (nvdaRefPrice === null) { nvdaRefPrice = mark; return; }
+  const pctMove = Math.abs((mark - nvdaRefPrice) / nvdaRefPrice) * 100;
+  if (pctMove >= 1.0 && Date.now() - alertDismissedAt > 30000) {
+    const dir = mark > nvdaRefPrice ? 'up' : 'down';
+    const el = document.getElementById('alert-banner');
+    document.getElementById('alert-text').textContent =
+      `NVDA moved ${dir} ${pctMove.toFixed(2)}% from $${nvdaRefPrice.toFixed(2)} to $${mark.toFixed(2)}`;
+    el.classList.add('show');
+    playAlertSound();
+    nvdaRefPrice = mark;
+  }
+}
+
+function dismissAlert() {
+  document.getElementById('alert-banner').classList.remove('show');
+  alertDismissedAt = Date.now();
+}
+
+function playAlertSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [660, 880].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.value = 0.15;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + i * 0.15);
+      osc.stop(ctx.currentTime + i * 0.15 + 0.12);
+    });
+  } catch {}
+}
+
+// --- render helpers ---
+function renderMarket(sym, data) {
+  const price = data.mark_price || data.last_clearing_price;
+  document.getElementById('price-' + sym).textContent = fmtPrice(price);
+
+  const ch = fmtChange24h(data.price_change_24h);
+  const chEl = document.getElementById('change-' + sym);
+  chEl.textContent = ch.text;
+  chEl.className = 'card-change ' + ch.cls;
+
+  const oracleEl = document.getElementById('oracle-' + sym);
+  oracleEl.innerHTML = fmtPrice(data.oracle_price) +
+    (data.internal ? '<span class="oracle-badge">internal</span>' : '');
+
+  document.getElementById('vol-' + sym).textContent = fmtUsd(data.volume_24h);
+  document.getElementById('oi-' + sym).textContent = fmtUsd(data.open_interest);
+  document.getElementById('fund-' + sym).textContent = fmtFunding(data.funding_rate);
+
+  if (sym === 'NVDA') checkNvdaAlert(price);
+}
+
+function renderAccount(data) {
+  document.getElementById('acct-value').textContent = fmtUsd(data.account_value);
+  document.getElementById('acct-cash').textContent = fmtUsd(data.cash);
+
+  const upnl = fmtPnl(data.total_unrealized_pnl);
+  const upnlEl = document.getElementById('acct-upnl');
+  upnlEl.textContent = upnl.text;
+  upnlEl.className = 'stat-value ' + upnl.cls;
+
+  const netDep = fromPod(data.net_deposits);
+  const acctVal = fromPod(data.account_value);
+  if (netDep && acctVal) {
+    const lifetime = parseFloat(acctVal) - parseFloat(netDep);
+    const lpnl = fmtPnl(
+      (BigInt(data.account_value) - BigInt(data.net_deposits)).toString()
+    );
+    const lpnlEl = document.getElementById('acct-lpnl');
+    lpnlEl.textContent = lpnl.text;
+    lpnlEl.className = 'stat-value ' + lpnl.cls;
+  }
+}
+
+function renderPositions(positions) {
+  const tbody = document.getElementById('positions-body');
+  if (!positions || positions.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No open positions</td></tr>';
+    return;
+  }
+  tbody.innerHTML = positions.map(p => {
+    const pnl = fmtPnl(p.unrealized_pnl);
+    const liqPrice = p.liquidation_price === '0x0' || p.liquidation_price === '0'
+      ? 'None' : fmtPrice(p.liquidation_price);
+    return `<tr>
+      <td>${p.base_symbol || MARKETS[p.orderbook_id] || p.orderbook_id.slice(0,10)}</td>
+      <td class="${p.side === 'long' ? 'delta-up' : 'delta-down'}">${p.side}</td>
+      <td>${fmtSize(p.size)}</td>
+      <td>${fmtPrice(p.entry_price)}</td>
+      <td>${fmtPrice(p.mark_price)}</td>
+      <td>${liqPrice}</td>
+      <td class="${pnl.cls}">${pnl.text}</td>
+    </tr>`;
+  }).join('');
+}
+
+function setTimestamp() {
+  document.getElementById('last-update').textContent =
+    'Updated ' + new Date().toLocaleTimeString();
+}
+
+// --- REST bootstrap ---
+async function bootstrap() {
+  try {
+    const [statsRes, posRes] = await Promise.all([
+      fetch(REST + '/clob/markets/stats'),
+      fetch(REST + '/clob/positions/' + ACCOUNT),
+    ]);
+    const stats = await statsRes.json();
+    const posData = await posRes.json();
+
+    for (const m of stats.markets || []) {
+      const sym = MARKETS[m.orderbook_id];
+      if (sym) renderMarket(sym, m);
+    }
+    marketsSince = stats.solution_now;
+
+    renderAccount(posData);
+    renderPositions(posData.positions);
+    positionsSince = posData.timestamp;
+
+    setTimestamp();
+    connectWs();
+  } catch (e) {
+    setStatus('error', 'REST failed: ' + e.message);
+  }
+}
+
+// --- WebSocket ---
+let ws = null;
+let marketsSince = null;
+let positionsSince = null;
+let heard = Date.now();
+let reconnectDelay = 1000;
+let subIdMarkets = null;
+let subIdPositions = null;
+const newestMarket = new Map();
+let newestPosition = 0;
+
+function setStatus(state, label) {
+  document.getElementById('ws-dot').className = 'status-dot ' + state;
+  document.getElementById('ws-label').textContent = label;
+}
+
+function connectWs() {
+  ws = new WebSocket(WS_URL);
+  ws.onopen = () => {
+    setStatus('connected', 'live');
+    reconnectDelay = 1000;
+    heard = Date.now();
+
+    ws.send(JSON.stringify({
+      jsonrpc: '2.0', id: 1, method: 'eth_subscribe',
+      params: ['pod_markets', {
+        orderbook_ids: MARKET_IDS,
+        since: Number(marketsSince)
+      }]
+    }));
+    ws.send(JSON.stringify({
+      jsonrpc: '2.0', id: 2, method: 'eth_subscribe',
+      params: ['pod_positions', {
+        account: ACCOUNT,
+        since: Number(positionsSince)
+      }]
+    }));
+  };
+
+  ws.onmessage = (ev) => {
+    heard = Date.now();
+    reconnectDelay = 1000;
+    const m = JSON.parse(ev.data);
+
+    if (m.id === 1) {
+      if (m.error) { setStatus('error', 'markets sub failed'); return; }
+      subIdMarkets = m.result;
+      return;
+    }
+    if (m.id === 2) {
+      if (m.error) { setStatus('error', 'positions sub failed'); return; }
+      subIdPositions = m.result;
+      return;
+    }
+
+    if (m.method !== 'eth_subscription') return;
+
+    if (m.params.error) {
+      const resume = m.params.error.data?.resume_since;
+      if (m.params.subscription === subIdMarkets && resume) marketsSince = resume;
+      if (m.params.subscription === subIdPositions && resume) positionsSince = resume;
+      ws.close();
+      return;
+    }
+
+    const r = m.params.result;
+
+    if (m.params.subscription === subIdMarkets) {
+      const ts = Number(r.timestamp || 0);
+      const key = r.orderbook_id || 'all';
+      if (ts <= (newestMarket.get(key) || 0)) return;
+      newestMarket.set(key, ts);
+      marketsSince = Math.max(Number(marketsSince), ts);
+
+      const sym = MARKETS[r.orderbook_id];
+      if (sym) {
+        renderMarket(sym, r);
+        setTimestamp();
+      }
+    }
+
+    if (m.params.subscription === subIdPositions) {
+      const data = r.data || r;
+      const ts = Number(data.timestamp || 0);
+      if (ts <= newestPosition) return;
+      newestPosition = ts;
+      positionsSince = Math.max(Number(positionsSince), ts);
+
+      renderAccount(data);
+      renderPositions(data.positions);
+      setTimestamp();
+    }
+  };
+
+  ws.onclose = () => {
+    setStatus('', 'reconnecting…');
+    setTimeout(connectWs, reconnectDelay);
+    reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+  };
+
+  ws.onerror = () => {
+    setStatus('error', 'connection error');
+  };
+}
+
+setInterval(() => {
+  if (!ws || ws.readyState !== 1) return;
+  if (Date.now() - heard > 75000) {
+    ws.close();
+  } else {
+    ws.send('{"jsonrpc":"2.0","id":99,"method":"eth_chainId","params":[]}');
+  }
+}, 30000);
+
+bootstrap();
+</script>
+</body>
+</html>

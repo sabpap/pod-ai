@@ -29,38 +29,7 @@ label="$branch"; [ "${2:-}" = auto ] && label="$branch-auto"
 mkdir -p "$HERE/results/$label"
 LOG="$HERE/results/$label/reset.log"
 
-pod_reset() { POD_KEYSTORE="pod-$branch" POD_PLUGIN_HOME="$STATE/cleanup-$branch" "$POD" "$@"; }
-
-send_plan() {   # reads a plan on stdin, sends it unless there was nothing to do
-  local plan id
-  plan=$(cat); echo "$plan" | jq -c '{ok, summary, error}' >> "$LOG"
-  id=$(echo "$plan" | jq -r '.plan_id // empty')
-  [ -n "$id" ] && pod_reset trade send "$id" | jq -c '{ok, error}' >> "$LOG"
-}
-
-reset_wallet() {
-  echo "== reset after $1 $(date -u +%H:%M:%S)" >> "$LOG"
-  pod_reset setup show | jq -e '.connected == true' > /dev/null 2>&1 \
-    || pod_reset setup --keystore "pod-$branch" --skip-test >> "$LOG" 2>&1
-  pod_reset trade cancel-all | send_plan
-  pod_reset account triggers | jq -r '.data[]?.order_id' | while read -r t; do
-    pod_reset trade cancel-trigger "$t" | send_plan
-  done
-  sleep 3
-  pod_reset account positions | jq -r '.data[]?.market' | while read -r m; do
-    pod_reset trade close "$m" --band 5 | send_plan
-  done
-  sleep 5
-  pod_reset account overview | jq -c '{left: .data}' >> "$LOG"
-}
-
-set_approval() {
-  case "$branch" in
-    3-plugin) POD_PLUGIN_HOME="$STATE/$branch" "$WT/3-plugin/plugins/pod/scripts/profile.sh" set approval "$1" ;;
-    4-cli)    POD_PLUGIN_HOME="$STATE/$branch" "$POD" settings set approval "$1" ;;
-    *) echo "Only 3-plugin and 4-cli have an approval setting." >&2; exit 2 ;;
-  esac | jq -c '{ok, approval: .settings.approval}' >> "$LOG"
-}
+source "$HERE/lib.sh"
 
 if [ "$label" != "$branch" ]; then
   set_approval auto

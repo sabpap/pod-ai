@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pod Dashboard</title>
+<style>
+  :root {
+    --surface-page: #0b0b0b;
+    --surface-card: #191919;
+    --surface-hover: #222222;
+    --text-primary: #efefef;
+    --text-secondary: #9c9c9c;
+    --gridline: #303030;
+    --baseline: #474747;
+    --border: rgba(255,255,255,0.10);
+    --up: #53c556;
+    --down: #eb6263;
+    --series-1: #338ced;
+    --series-2: #e76624;
+    --series-3: #00a888;
+    --accent: #338ced;
+    --warning: #fbb315;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--surface-page);
+    color: var(--text-primary);
+    line-height: 1.5;
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--gridline);
+    padding-bottom: 16px;
+  }
+  header h1 { font-size: 20px; font-weight: 600; }
+  .status-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .status-dot.live { background: var(--up); }
+  .status-dot.error { background: var(--down); }
+  #conn-status { font-size: 13px; color: var(--text-secondary); }
+
+  .section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+  }
+
+  .account-bar {
+    display: flex;
+    gap: 32px;
+    margin-bottom: 24px;
+    padding: 16px 20px;
+    background: var(--surface-card);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .account-bar .stat { display: flex; flex-direction: column; }
+  .account-bar .stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .account-bar .stat-value {
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .markets-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .market-card {
+    background: var(--surface-card);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    padding: 20px;
+    transition: border-color 0.15s;
+  }
+  .market-card:hover { border-color: var(--baseline); }
+  .market-card .symbol {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .market-card .symbol .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .market-card .price {
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .market-card .change {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+  .market-card .details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
+    border-top: 1px solid var(--gridline);
+    padding-top: 12px;
+  }
+  .market-card .detail-item {
+    display: flex;
+    flex-direction: column;
+  }
+  .market-card .detail-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .market-card .detail-value {
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .oracle-tag {
+    font-size: 11px;
+    color: var(--text-secondary);
+    background: var(--surface-hover);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+  .internal-tag {
+    font-size: 11px;
+    color: var(--warning);
+    background: rgba(251,179,21,0.12);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  .positions-section { margin-bottom: 24px; }
+  .positions-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface-card);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .positions-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--gridline);
+  }
+  .positions-table td {
+    font-size: 13px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--gridline);
+    font-variant-numeric: tabular-nums;
+  }
+  .positions-table tr:last-child td { border-bottom: none; }
+  .empty-state {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  .alert-banner {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    padding: 12px 24px;
+    background: var(--warning);
+    color: #0b0b0b;
+    font-weight: 600;
+    font-size: 14px;
+    text-align: center;
+    transform: translateY(-100%);
+    transition: transform 0.3s;
+    z-index: 100;
+  }
+  .alert-banner.visible { transform: translateY(0); }
+  .alert-banner button {
+    margin-left: 16px;
+    background: rgba(0,0,0,0.15);
+    border: none;
+    color: #0b0b0b;
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  .alert-log {
+    background: var(--surface-card);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    padding: 16px 20px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .alert-log .entry {
+    font-size: 12px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--gridline);
+    font-variant-numeric: tabular-nums;
+  }
+  .alert-log .entry:last-child { border-bottom: none; }
+
+  .flash { animation: flash-bg 0.6s ease-out; }
+  @keyframes flash-bg {
+    0% { background: rgba(51,140,237,0.15); }
+    100% { background: transparent; }
+  }
+
+  @media (max-width: 768px) {
+    .markets-grid { grid-template-columns: 1fr; }
+    .account-bar { flex-wrap: wrap; gap: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="alert-banner" id="alert-banner">
+  <span id="alert-text"></span>
+  <button onclick="dismissAlert()">Dismiss</button>
+</div>
+
+<header>
+  <h1>Pod Dashboard</h1>
+  <span id="conn-status"><span class="status-dot" id="conn-dot"></span>Connecting&hellip;</span>
+</header>
+
+<div class="section-title">Account</div>
+<div class="account-bar" id="account-bar">
+  <div class="stat">
+    <span class="stat-label">Account Value</span>
+    <span class="stat-value" id="acct-value">&mdash;</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Cash</span>
+    <span class="stat-value" id="acct-cash">&mdash;</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Unrealized P&L</span>
+    <span class="stat-value" id="acct-pnl">&mdash;</span>
+  </div>
+</div>
+
+<div class="section-title">Markets</div>
+<div class="markets-grid" id="markets-grid"></div>
+
+<div class="positions-section">
+  <div class="section-title">Positions</div>
+  <div id="positions-container"></div>
+</div>
+
+<div class="section-title">NVDA Alerts (1% move)</div>
+<div class="alert-log" id="alert-log">
+  <div class="entry" style="color: var(--text-secondary);">No alerts yet</div>
+</div>
+
+<script>
+const ACCOUNT = '0x6273a78912005AD6C3c4C1C3154ebAcbFd590d67';
+const REST = 'https://staging-rpc.podtestnet.dev/v1';
+const WS_URL = 'wss://staging-rpc.podtestnet.dev';
+const SCALE = 10n ** 18n;
+
+const MARKETS = {
+  '0x0000000000000000000000000000000000000000000000000000000000000007': { symbol: 'NVDA', color: 'var(--series-1)' },
+  '0x0000000000000000000000000000000000000000000000000000000000000008': { symbol: 'AAPL', color: 'var(--series-2)' },
+  '0x000000000000000000000000000000000000000000000000000000000000000c': { symbol: 'GLD',  color: 'var(--series-3)' },
+};
+const MARKET_IDS = Object.keys(MARKETS);
+const NVDA_ID = MARKET_IDS[0];
+
+function fromPod(v) {
+  if (v == null || v === '') return null;
+  const s = String(v);
+  let n;
+  if (s.startsWith('0x') || s.startsWith('0X')) {
+    if (s === '0x0' || s === '0x00' || s === '0X0') return 0;
+    n = BigInt(s);
+  } else {
+    n = BigInt(s);
+  }
+  const neg = n < 0n;
+  const abs = neg ? -n : n;
+  const whole = abs / SCALE;
+  const frac = abs % SCALE;
+  const fracStr = frac.toString().padStart(18, '0').replace(/0+$/, '');
+  const numStr = fracStr ? `${whole}.${fracStr}` : `${whole}`;
+  return neg ? -parseFloat(numStr) : parseFloat(numStr);
+}
+
+function fmt(v, decimals = 2) {
+  if (v == null) return '—';
+  return v.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+function fmtUsd(v, decimals = 2) {
+  if (v == null) return '—';
+  return '$' + fmt(v, decimals);
+}
+
+function fmtCompact(v) {
+  if (v == null) return '—';
+  if (v >= 1e9) return '$' + (v / 1e9).toFixed(1) + 'B';
+  if (v >= 1e6) return '$' + (v / 1e6).toFixed(1) + 'M';
+  if (v >= 1e3) return '$' + (v / 1e3).toFixed(1) + 'K';
+  return fmtUsd(v);
+}
+
+function fmtBps(bps) {
+  if (bps == null) return '—';
+  const pct = bps / 100;
+  const sign = pct >= 0 ? '+' : '';
+  return sign + pct.toFixed(2) + '%';
+}
+
+function changeColor(bps) {
+  if (bps == null) return 'var(--text-secondary)';
+  return bps >= 0 ? 'var(--up)' : 'var(--down)';
+}
+
+function pnlColor(v) {
+  if (v == null || v === 0) return 'var(--text-primary)';
+  return v > 0 ? 'var(--up)' : 'var(--down)';
+}
+
+let marketData = {};
+let positionsData = { positions: [], account_value: null, cash: null, total_unrealized_pnl: null };
+let nvdaAnchorPrice = null;
+let alertEntries = [];
+let alertDismissed = false;
+
+function renderMarkets() {
+  const grid = document.getElementById('markets-grid');
+  grid.innerHTML = '';
+  for (const id of MARKET_IDS) {
+    const m = MARKETS[id];
+    const d = marketData[id] || {};
+    const mark = fromPod(d.mark_price);
+    const oracle = fromPod(d.oracle_price);
+    const last = fromPod(d.last_clearing_price);
+    const change24 = d.price_change_24h;
+    const high = fromPod(d.high_24h);
+    const low = fromPod(d.low_24h);
+    const vol = fromPod(d.volume_24h);
+    const oi = fromPod(d.open_interest);
+    const funding = d.funding_rate ? (parseFloat(d.funding_rate) * 100).toFixed(4) + '%' : '—';
+    const isInternal = d.internal === true;
+
+    const card = document.createElement('div');
+    card.className = 'market-card';
+    card.id = 'card-' + m.symbol;
+    card.innerHTML = `
+      <div class="symbol">
+        <span class="dot" style="background:${m.color}"></span>
+        ${m.symbol}
+        ${isInternal ? '<span class="internal-tag">internal oracle</span>' : ''}
+      </div>
+      <div class="price">${fmtUsd(mark)}</div>
+      <div class="change" style="color:${changeColor(change24)}">
+        ${fmtBps(change24)} 24h
+      </div>
+      <div class="details">
+        <div class="detail-item">
+          <span class="detail-label">Oracle</span>
+          <span class="detail-value">${fmtUsd(oracle)}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Last Trade</span>
+          <span class="detail-value">${fmtUsd(last)}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">24h High</span>
+          <span class="detail-value">${fmtUsd(high)}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">24h Low</span>
+          <span class="detail-value">${fmtUsd(low)}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">24h Volume</span>
+          <span class="detail-value">${fmtCompact(vol)}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Open Interest</span>
+          <span class="detail-value">${fmtCompact(oi)}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Funding / 8h</span>
+          <span class="detail-value">${funding}</span>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  }
+}
+
+function renderAccount() {
+  const av = fromPod(positionsData.account_value);
+  const cash = fromPod(positionsData.cash);
+  const pnl = fromPod(positionsData.total_unrealized_pnl);
+  document.getElementById('acct-value').textContent = fmtUsd(av);
+  document.getElementById('acct-cash').textContent = fmtUsd(cash);
+  const pnlEl = document.getElementById('acct-pnl');
+  pnlEl.textContent = pnl != null ? (pnl >= 0 ? '+' : '') + fmtUsd(pnl) : '—';
+  pnlEl.style.color = pnlColor(pnl);
+}
+
+function renderPositions() {
+  const container = document.getElementById('positions-container');
+  const positions = positionsData.positions || [];
+  if (positions.length === 0) {
+    container.innerHTML = '<div class="positions-table"><div class="empty-state">No open positions</div></div>';
+    return;
+  }
+  let html = `<table class="positions-table">
+    <thead><tr>
+      <th>Market</th><th>Side</th><th>Size</th><th>Entry</th>
+      <th>Mark</th><th>Notional</th><th>Margin</th><th>P&L</th><th>Liq. Price</th>
+    </tr></thead><tbody>`;
+  for (const p of positions) {
+    const sym = p.base_symbol || MARKETS[p.orderbook_id]?.symbol || p.orderbook_id.slice(0, 10);
+    const size = fromPod(p.size);
+    const entry = fromPod(p.entry_price);
+    const mark = fromPod(p.mark_price);
+    const notional = fromPod(p.notional);
+    const margin = fromPod(p.margin);
+    const pnl = fromPod(p.unrealized_pnl);
+    const liq = fromPod(p.liquidation_price);
+    const liqStr = (liq === 0 || liq == null) ? '—' : fmtUsd(liq);
+    html += `<tr>
+      <td style="font-weight:600">${sym}</td>
+      <td style="color:${p.side === 'long' ? 'var(--up)' : 'var(--down)'}">${(p.side || '').toUpperCase()}</td>
+      <td>${fmt(Math.abs(size), 6)}</td>
+      <td>${fmtUsd(entry)}</td>
+      <td>${fmtUsd(mark)}</td>
+      <td>${fmtUsd(notional)}</td>
+      <td>${fmtUsd(margin)}</td>
+      <td style="color:${pnlColor(pnl)}">${pnl != null ? (pnl >= 0 ? '+' : '') + fmtUsd(pnl) : '—'}</td>
+      <td>${liqStr}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function checkNvdaAlert(d) {
+  const mark = fromPod(d.mark_price);
+  if (mark == null || mark === 0) return;
+  if (nvdaAnchorPrice == null) { nvdaAnchorPrice = mark; return; }
+  const pctMove = ((mark - nvdaAnchorPrice) / nvdaAnchorPrice) * 100;
+  if (Math.abs(pctMove) >= 1) {
+    const dir = pctMove > 0 ? 'UP' : 'DOWN';
+    const msg = `NVDA ${dir} ${Math.abs(pctMove).toFixed(2)}%: $${fmt(mark)} (from $${fmt(nvdaAnchorPrice)})`;
+    nvdaAnchorPrice = mark;
+    fireAlert(msg);
+  }
+}
+
+function fireAlert(msg) {
+  const now = new Date().toLocaleTimeString();
+  alertEntries.unshift({ time: now, msg });
+  if (alertEntries.length > 50) alertEntries.length = 50;
+  renderAlertLog();
+
+  const banner = document.getElementById('alert-banner');
+  document.getElementById('alert-text').textContent = msg;
+  banner.classList.add('visible');
+  alertDismissed = false;
+  setTimeout(() => { if (!alertDismissed) banner.classList.remove('visible'); }, 10000);
+
+  if (Notification.permission === 'granted') {
+    new Notification('Pod Alert', { body: msg, icon: '' });
+  }
+}
+
+function dismissAlert() {
+  alertDismissed = true;
+  document.getElementById('alert-banner').classList.remove('visible');
+}
+
+function renderAlertLog() {
+  const log = document.getElementById('alert-log');
+  if (alertEntries.length === 0) {
+    log.innerHTML = '<div class="entry" style="color: var(--text-secondary);">No alerts yet</div>';
+    return;
+  }
+  log.innerHTML = alertEntries.map(e =>
+    `<div class="entry"><span style="color:var(--text-secondary)">${e.time}</span> &mdash; ${e.msg}</div>`
+  ).join('');
+}
+
+function flashCard(symbol) {
+  const card = document.getElementById('card-' + symbol);
+  if (card) { card.classList.remove('flash'); void card.offsetWidth; card.classList.add('flash'); }
+}
+
+function setStatus(state, text) {
+  const dot = document.getElementById('conn-dot');
+  dot.className = 'status-dot' + (state === 'live' ? ' live' : state === 'error' ? ' error' : '');
+  document.getElementById('conn-status').innerHTML = dot.outerHTML + text;
+}
+
+async function loadInitial() {
+  const [posRes, statsRes] = await Promise.all([
+    fetch(`${REST}/clob/positions/${ACCOUNT}`),
+    fetch(`${REST}/clob/markets/stats`),
+  ]);
+  const pos = await posRes.json();
+  const stats = await statsRes.json();
+
+  positionsData = pos;
+  for (const m of stats.markets) {
+    if (MARKETS[m.orderbook_id]) marketData[m.orderbook_id] = m;
+  }
+
+  if (marketData[NVDA_ID]) {
+    nvdaAnchorPrice = fromPod(marketData[NVDA_ID].mark_price);
+  }
+
+  renderAccount();
+  renderMarkets();
+  renderPositions();
+
+  return {
+    marketsSince: Number(stats.solution_now),
+    positionsSince: Number(pos.timestamp),
+  };
+}
+
+let ws = null;
+let heard = Date.now();
+let delay = 1000;
+let marketSubId = null;
+let posSubId = null;
+let subIdCounter = 1;
+let newestMarketTs = new Map();
+let newestPosTs = 0;
+
+function connectWs(marketsSince, positionsSince) {
+  ws = new WebSocket(WS_URL);
+
+  ws.onopen = () => {
+    setStatus('live', 'Live');
+    delay = 1000;
+
+    const mId = subIdCounter++;
+    ws.send(JSON.stringify({
+      jsonrpc: '2.0', id: mId, method: 'eth_subscribe',
+      params: ['pod_markets', { orderbook_ids: MARKET_IDS, since: marketsSince }]
+    }));
+
+    const pId = subIdCounter++;
+    ws.send(JSON.stringify({
+      jsonrpc: '2.0', id: pId, method: 'eth_subscribe',
+      params: ['pod_positions', { account: ACCOUNT, since: positionsSince }]
+    }));
+  };
+
+  ws.onmessage = (ev) => {
+    heard = Date.now();
+    const m = JSON.parse(ev.data);
+
+    if (m.id && m.error) {
+      console.error('Subscribe error', m.error);
+      setStatus('error', 'Subscribe error: ' + m.error.message);
+      return;
+    }
+    if (m.id && m.result) return;
+    if (m.method !== 'eth_subscription') return;
+
+    if (m.params.error) {
+      const resumeSince = m.params.error.data?.resume_since;
+      if (resumeSince) {
+        marketsSince = Math.max(marketsSince, resumeSince);
+        positionsSince = Math.max(positionsSince, resumeSince);
+      }
+      ws.close();
+      return;
+    }
+
+    const r = m.params.result;
+
+    if (r.orderbook_id && MARKETS[r.orderbook_id]) {
+      const ts = Number(r.timestamp || 0);
+      const key = r.orderbook_id;
+      if (ts <= (newestMarketTs.get(key) || 0)) return;
+      newestMarketTs.set(key, ts);
+      marketsSince = Math.max(marketsSince, ts);
+
+      marketData[key] = { ...marketData[key], ...r };
+      renderMarkets();
+      flashCard(MARKETS[key].symbol);
+      if (key === NVDA_ID) checkNvdaAlert(r);
+    }
+
+    if (r.account && r.data) {
+      const ts = Number(r.data?.timestamp || 0);
+      if (ts <= newestPosTs) return;
+      newestPosTs = ts;
+      positionsSince = Math.max(positionsSince, ts);
+
+      positionsData = r.data;
+      renderAccount();
+      renderPositions();
+    }
+  };
+
+  ws.onclose = () => {
+    setStatus('', 'Reconnecting…');
+    setTimeout(() => connectWs(marketsSince, positionsSince), delay);
+    delay = Math.min(delay * 2, 30000);
+  };
+
+  ws.onerror = () => {
+    setStatus('error', 'Connection error');
+  };
+}
+
+setInterval(() => {
+  if (!ws) return;
+  if (Date.now() - heard > 75000) {
+    ws.close();
+  } else if (ws.readyState === WebSocket.OPEN) {
+    ws.send('{"jsonrpc":"2.0","id":999,"method":"eth_chainId","params":[]}');
+  }
+}, 30000);
+
+async function init() {
+  if (Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+  try {
+    const since = await loadInitial();
+    connectWs(since.marketsSince, since.positionsSince);
+  } catch (e) {
+    setStatus('error', 'Failed to load: ' + e.message);
+    console.error(e);
+  }
+}
+
+init();
+</script>
+</body>
+</html>

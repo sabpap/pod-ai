@@ -1,0 +1,19 @@
+{
+  "branch": "2-manual",
+  "case": "E2",
+  "run": 1,
+  "finished": true,
+  "turns": 21,
+  "tool_calls": 19,
+  "tools": {
+    "Bash": 16,
+    "Read": 2,
+    "Skill": 1
+  },
+  "seconds": 106,
+  "cost_usd": 0.681276,
+  "permission_denials": 0,
+  "sessions_turns": 1,
+  "send_attempts": 1,
+  "answer": "Filled.\n\n| | |\n|---|---|\n| **Market** | NVDA perp |\n| **Side** | Buy (long) |\n| **Size** | 0.064079 NVDA |\n| **Fill price** | $156.54 |\n| **Value** | ~$10.03 |\n| **Fee** | $0.0045 |"
+}

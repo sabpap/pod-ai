@@ -1,0 +1,22 @@
+{
+  "branch": "1-raw",
+  "case": "J",
+  "run": 2,
+  "finished": true,
+  "turns": 83,
+  "tool_calls": 88,
+  "tools": {
+    "Agent": 6,
+    "Bash": 70,
+    "Glob": 2,
+    "Read": 2,
+    "Skill": 1,
+    "WebFetch": 7
+  },
+  "seconds": 1013,
+  "cost_usd": 5.011783585,
+  "permission_denials": 0,
+  "sessions_turns": 1,
+  "send_attempts": 13,
+  "answer": "---\n\n## Final Trading Report\n\n### Account Summary\n| Metric | Value |\n|---|---|\n| Starting equity | $16.82 |\n| Ending equity | $16.47 |\n| **Session P&L** | **-$0.35** |\n| Realized P&L | -$0.29 |\n| Fees paid | ~$0.06 |\n| Positions open | 0 |\n| Active orders | 0 |\n\n### Trade Count\n- **27 orders submitted** (nonces 95-121)\n- **26 filled**, 1 expired (SHIN-ETSU — wide spread, limit never hit)\n- **13 round trips** (open + close)\n\n### Markets Traded\n0700-HK/USD, SMIC/USD, Hua Hong/USD, BYD/USD, ANT/USD, Xiaomi/1810-HK, KUAISHOU/USD, META/USD, AMZN/USD, SHIN-ETSU/USD (expired)\n\n### What Went Wrong\n\n1. **Spread friction was the killer.** Every round trip paid the bid-ask spread twice (enter + exit) plus 0.045% taker fee each way. With typical spreads of 0.1-0.5%, each $5 round trip cost $0.01-0.03 in pure friction. Over 13 round trips that's about $0.26 — almost all of the loss.\n\n2. **No close was profitable.** Every single close realized a loss. Even when mark-to-market showed a profit (e.g. Hua Hong was +$0.03 unrealized), the actual close ate the profit because the fill crossed the spread to the other side of the book.\n\n3. **Oracle convergence was too slow for scalping.** The strategy of shorting when price > oracle was directionally correct (most markets were above oracle), but the convergence played out over minutes to hours, not seconds. Rapid rotation traded away the edge before it paid.\n\n4. **LONG trades consistently lost.** Both SMIC longs went against me. The market had a persistent upward bias (prices above oracle), making mean-reversion longs the wrong side.\n\n### What Worked\n- **Short bias was correct** — prices were consistently above oracle across the board\n- **Tight-spread markets** (0700-HK, Xiaomi) had the best in-trade P&L\n- **KUAISHOU** was the best unrealized position (+$0.01) before close\n\n### Lesson\nOn pod's batch-auction order books with ~0.2% spreads and 0.045% taker fees, a scalping strategy that rotates every 1-2 minutes loses money to friction. A profitable approach would need either (a) maker-only orders (POST_ONLY) to avoid taker fees and get fills inside the spread, or (b) longer holds to let convergence outweigh the two spread crossings."
+}

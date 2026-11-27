@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pod live — NVDA · AAPL · GLD</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0a0e17;--card:#131a2a;--border:#1e293b;
+    --text:#e1e7ef;--dim:#64748b;--label:#94a3b8;
+    --up:#22c55e;--down:#ef4444;--flat:#6b7280;
+    --accent:#3b82f6;--alert:#fbbf24;--alert-bg:#78350f;
+  }
+  html{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;color:var(--text);background:var(--bg)}
+  body{max-width:1100px;margin:0 auto;padding:16px}
+
+  /* Alert banner */
+  #alert-banner{display:none;background:var(--alert-bg);border:1px solid var(--alert);border-radius:8px;padding:12px 16px;margin-bottom:16px;align-items:center;gap:12px}
+  #alert-banner.visible{display:flex}
+  #alert-banner .bell{font-size:20px;flex-shrink:0}
+  #alert-banner .msg{flex:1;color:var(--alert);font-weight:600}
+  #alert-banner .detail{color:var(--label);font-size:12px}
+  #alert-banner button{background:var(--alert);color:#000;border:none;border-radius:4px;padding:4px 12px;cursor:pointer;font-weight:600;font-size:12px}
+
+  /* Header */
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+  header h1{font-size:18px;font-weight:700;letter-spacing:-.3px}
+  header h1 span{color:var(--dim);font-weight:400}
+  .status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dim)}
+  .status .dot{width:8px;height:8px;border-radius:50%;background:var(--flat)}
+  .status .dot.live{background:var(--up);box-shadow:0 0 6px var(--up)}
+  .status .dot.error{background:var(--down)}
+
+  /* Account bar */
+  .account-bar{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:8px}
+  .account-bar .item{display:flex;flex-direction:column;gap:2px}
+  .account-bar .item.addr{flex:1;min-width:200px}
+  .account-bar .lbl{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+  .account-bar .val{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+  .account-bar .val.mono{font-family:'SF Mono',Menlo,monospace;font-size:12px;color:var(--label)}
+
+  /* Market cards */
+  .markets{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+  @media(max-width:720px){.markets{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;position:relative}
+  .card .ticker{font-size:16px;font-weight:700;margin-bottom:2px}
+  .card .full-name{font-size:11px;color:var(--dim);margin-bottom:12px}
+  .card .sub{display:flex;gap:16px;margin-bottom:10px}
+  .card .sub-col{flex:1}
+  .card .sub-col .sub-label{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+  .card .sub-col .price{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2}
+  .card .sub-col .price.spot{font-size:14px;color:var(--label)}
+  .card .meta{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+  .card .meta .row{display:flex;justify-content:space-between;font-size:12px}
+  .card .meta .row .k{color:var(--dim)}
+  .card .meta .row .v{font-variant-numeric:tabular-nums;font-weight:500}
+  .card .change{position:absolute;top:16px;right:16px;font-size:13px;font-weight:700;padding:2px 8px;border-radius:4px}
+  .card .change.up{color:var(--up);background:rgba(34,197,94,.12)}
+  .card .change.down{color:var(--down);background:rgba(239,68,68,.12)}
+  .card .change.flat{color:var(--flat);background:rgba(107,114,128,.12)}
+  .card .nvda-ref{margin-top:10px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;color:var(--dim);display:flex;justify-content:space-between;align-items:center}
+  .card .nvda-ref button{background:transparent;border:1px solid var(--border);color:var(--label);border-radius:3px;padding:1px 6px;cursor:pointer;font-size:10px}
+  .card .nvda-ref button:hover{border-color:var(--label)}
+
+  /* Positions */
+  .positions{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+  .positions h2{font-size:14px;font-weight:600;margin-bottom:12px;color:var(--label)}
+  .positions table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+  .positions th{text-align:left;padding:6px 8px;color:var(--dim);font-weight:500;text-transform:uppercase;font-size:10px;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+  .positions td{padding:6px 8px;border-bottom:1px solid var(--border)}
+  .positions tr:last-child td{border-bottom:none}
+  .positions .empty{color:var(--dim);text-align:center;padding:24px}
+  .long{color:var(--up)} .short{color:var(--down)}
+
+  /* Footer */
+  footer{display:flex;justify-content:space-between;font-size:11px;color:var(--dim)}
+  footer a{color:var(--accent);text-decoration:none}
+</style>
+</head>
+<body>
+
+<div id="alert-banner">
+  <span class="bell">&#x1F514;</span>
+  <div>
+    <div class="msg" id="alert-msg"></div>
+    <div class="detail" id="alert-detail"></div>
+  </div>
+  <button onclick="resetAlert()">Reset</button>
+  <button onclick="dismissAlert()">Dismiss</button>
+</div>
+
+<header>
+  <h1>pod <span>live</span></h1>
+  <div class="status">
+    <div class="dot" id="ws-dot"></div>
+    <span id="ws-label">connecting…</span>
+  </div>
+</header>
+
+<div class="account-bar">
+  <div class="item addr">
+    <span class="lbl">Account</span>
+    <span class="val mono" id="acct-addr">—</span>
+  </div>
+  <div class="item">
+    <span class="lbl">Equity</span>
+    <span class="val" id="acct-equity">—</span>
+  </div>
+  <div class="item">
+    <span class="lbl">Cash</span>
+    <span class="val" id="acct-cash">—</span>
+  </div>
+  <div class="item">
+    <span class="lbl">Unrealized PnL</span>
+    <span class="val" id="acct-upnl">—</span>
+  </div>
+  <div class="item">
+    <span class="lbl">Realized PnL</span>
+    <span class="val" id="acct-rpnl">—</span>
+  </div>
+</div>
+
+<div class="markets" id="markets-grid"></div>
+
+<div class="positions">
+  <h2>Positions</h2>
+  <div id="positions-body"></div>
+</div>
+
+<footer>
+  <span id="last-update">Waiting for data…</span>
+  <a href="https://staging-app.podtestnet.dev" target="_blank">pod staging</a>
+</footer>
+
+<script>
+const API  = 'https://staging-rpc.podtestnet.dev/v1';
+const WS_URL = 'wss://staging-rpc.podtestnet.dev';
+const ACCOUNT = '0xaD60A063D766742A1b0bEed69e5425dBDf403834';
+
+const WATCHED = [
+  { key: 'NVDA', name: 'Nvidia',  spotId: pad32(1), perpId: pad32(7)  },
+  { key: 'AAPL', name: 'Apple',   spotId: pad32(2), perpId: pad32(8)  },
+  { key: 'GLD',  name: 'Gold',    spotId: pad32(6), perpId: pad32(0xc)},
+];
+
+function pad32(n) {
+  return '0x' + n.toString(16).padStart(64, '0');
+}
+
+function fromWei(v) {
+  if (v == null || v === '') return null;
+  if (typeof v === 'string' && v.startsWith('0x')) return Number(BigInt(v)) / 1e18;
+  return Number(v) / 1e18;
+}
+
+function fmtUSD(n, digits) {
+  if (n == null) return '—';
+  digits = digits ?? (Math.abs(n) >= 100 ? 2 : Math.abs(n) >= 1 ? 2 : 4);
+  return '$' + n.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+}
+
+function fmtPnl(n) {
+  if (n == null) return '—';
+  const s = fmtUSD(Math.abs(n));
+  return (n >= 0 ? '+' : '−') + s;
+}
+
+function fmtPct(bps) {
+  if (bps == null) return '—';
+  const pct = bps / 100;
+  return (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+}
+
+function fmtVol(n) {
+  if (n == null || n === 0) return '—';
+  if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return '$' + (n / 1e3).toFixed(1) + 'K';
+  return fmtUSD(n);
+}
+
+function pctClass(bps) {
+  if (bps == null || bps === 0) return 'flat';
+  return bps > 0 ? 'up' : 'down';
+}
+
+function pnlClass(n) {
+  if (n == null || n === 0) return '';
+  return n > 0 ? 'long' : 'short';
+}
+
+// ── State ──────────────────────────────────────────────
+let marketDefs = {};     // orderbook_id → { name, type, symbol }
+let statsById = {};      // orderbook_id → stats object
+let posData = null;      // full positions response
+let nvdaRef = null;      // reference price for 1% alert
+let alertFired = false;
+let alertDismissedFlag = false;
+let subIds = {};         // subscription id → channel name
+let ws = null;
+let reconnectTimer = null;
+
+// ── REST seed ──────────────────────────────────────────
+async function seed() {
+  try {
+    const [markets, stats, pos] = await Promise.all([
+      fetch(API + '/clob/markets').then(r => r.json()),
+      fetch(API + '/clob/markets/stats').then(r => r.json()),
+      fetch(API + '/clob/positions/' + ACCOUNT).then(r => r.json()),
+    ]);
+
+    markets.forEach(m => { marketDefs[m.id] = m; });
+    stats.markets.forEach(s => { statsById[s.orderbook_id] = s; });
+    posData = pos;
+
+    const nvdaPerp = statsById[WATCHED[0].perpId];
+    if (nvdaPerp && nvdaRef == null) {
+      nvdaRef = fromWei(nvdaPerp.last_clearing_price);
+    }
+
+    renderAll();
+    setStatus('seeded', 'Seeded from REST');
+
+    connectWS(stats.solution_now, pos.timestamp);
+  } catch (e) {
+    setStatus('error', 'REST seed failed: ' + e.message);
+    setTimeout(seed, 5000);
+  }
+}
+
+// ── WebSocket ──────────────────────────────────────────
+function connectWS(marketsSince, posSince) {
+  if (ws) { try { ws.close(); } catch(_){} }
+
+  ws = new WebSocket(WS_URL);
+
+  ws.onopen = () => {
+    setStatus('live', 'Connected');
+
+    const allIds = WATCHED.flatMap(w => [w.spotId, w.perpId]);
+    ws.send(JSON.stringify({
+      jsonrpc: '2.0', id: 1,
+      method: 'eth_subscribe',
+      params: ['pod_markets', { orderbook_ids: allIds, since: marketsSince }]
+    }));
+
+    ws.send(JSON.stringify({
+      jsonrpc: '2.0', id: 2,
+      method: 'eth_subscribe',
+      params: ['pod_positions', { account: ACCOUNT, since: posSince }]
+    }));
+  };
+
+  ws.onmessage = (evt) => {
+    let msg;
+    try { msg = JSON.parse(evt.data); } catch(_) { return; }
+
+    // Subscription confirmation
+    if (msg.id === 1 && msg.result) subIds[msg.result] = 'pod_markets';
+    if (msg.id === 2 && msg.result) subIds[msg.result] = 'pod_positions';
+
+    // Subscription error
+    if (msg.id && msg.error) {
+      const code = msg.error.code;
+      if (code === -32602 || code === 995) {
+        setStatus('error', 'since too old — re-seeding');
+        ws.close();
+        seed();
+        return;
+      }
+      setStatus('error', 'Sub error: ' + msg.error.message);
+      return;
+    }
+
+    // Notifications
+    if (msg.method === 'eth_subscription' && msg.params) {
+      const ch = subIds[msg.params.subscription];
+      const result = msg.params.result;
+
+      if (ch === 'pod_markets') {
+        const arr = Array.isArray(result) ? result : (result && result.markets ? result.markets : [result]);
+        arr.forEach(s => {
+          if (s && s.orderbook_id) statsById[s.orderbook_id] = s;
+        });
+        checkNvdaAlert();
+        renderMarkets();
+        updateTimestamp();
+      }
+
+      if (ch === 'pod_positions') {
+        const pd = (result && result.data) ? result.data : result;
+        if (pd && (pd.positions !== undefined || pd.cash !== undefined)) {
+          posData = pd;
+        }
+        renderAccount();
+        renderPositions();
+        updateTimestamp();
+      }
+
+      // Server-initiated close
+      if (msg.error && msg.error.code === -32020) {
+        const d = msg.error.data || {};
+        setStatus('error', 'Server closed — resuming');
+        ws.close();
+        connectWS(d.resume_since || 0, d.resume_since || 0);
+        return;
+      }
+    }
+  };
+
+  ws.onclose = () => {
+    setStatus('error', 'Disconnected — reconnecting');
+    clearTimeout(reconnectTimer);
+    reconnectTimer = setTimeout(seed, 3000);
+  };
+
+  ws.onerror = () => {
+    setStatus('error', 'WebSocket error');
+  };
+}
+
+// ── NVDA 1% alert ──────────────────────────────────────
+function checkNvdaAlert() {
+  if (alertDismissedFlag) return;
+  const nvda = statsById[WATCHED[0].perpId];
+  if (!nvda || nvdaRef == null) return;
+
+  const current = fromWei(nvda.last_clearing_price);
+  if (current == null || nvdaRef === 0) return;
+
+  const move = (current - nvdaRef) / nvdaRef;
+
+  if (Math.abs(move) >= 0.01 && !alertFired) {
+    alertFired = true;
+    const dir = move > 0 ? 'up' : 'down';
+    const pct = (move * 100).toFixed(2);
+    showAlert(
+      `NVDA moved ${dir} ${Math.abs(pct)}%`,
+      `${fmtUSD(nvdaRef)} → ${fmtUSD(current)}  (ref set at page load)`
+    );
+    playBeep();
+    sendNotification(`NVDA ${dir} ${Math.abs(pct)}%`, `${fmtUSD(nvdaRef)} → ${fmtUSD(current)}`);
+  }
+}
+
+function showAlert(msg, detail) {
+  document.getElementById('alert-msg').textContent = msg;
+  document.getElementById('alert-detail').textContent = detail;
+  document.getElementById('alert-banner').classList.add('visible');
+}
+
+function dismissAlert() {
+  document.getElementById('alert-banner').classList.remove('visible');
+  alertDismissedFlag = true;
+}
+
+function resetAlert() {
+  const nvda = statsById[WATCHED[0].perpId];
+  if (nvda) nvdaRef = fromWei(nvda.last_clearing_price);
+  alertFired = false;
+  alertDismissedFlag = false;
+  document.getElementById('alert-banner').classList.remove('visible');
+  renderMarkets();
+}
+
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [880, 1100].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      gain.gain.value = 0.15;
+      osc.start(ctx.currentTime + i * 0.15);
+      osc.stop(ctx.currentTime + i * 0.15 + 0.12);
+    });
+  } catch(_) {}
+}
+
+function sendNotification(title, body) {
+  if (Notification.permission === 'granted') {
+    new Notification(title, { body, icon: '📈' });
+  }
+}
+
+// ── Render ─────────────────────────────────────────────
+function renderAll() {
+  document.getElementById('acct-addr').textContent =
+    ACCOUNT.slice(0,6) + '…' + ACCOUNT.slice(-4);
+  renderAccount();
+  renderMarkets();
+  renderPositions();
+  updateTimestamp();
+}
+
+function renderAccount() {
+  if (!posData) return;
+  document.getElementById('acct-equity').textContent = fmtUSD(fromWei(posData.account_value));
+  document.getElementById('acct-cash').textContent = fmtUSD(fromWei(posData.cash));
+
+  const upnl = fromWei(posData.total_unrealized_pnl);
+  const el = document.getElementById('acct-upnl');
+  el.textContent = fmtPnl(upnl);
+  el.className = 'val ' + pnlClass(upnl);
+
+  const rpnl = fromWei(posData.total_realized_pnl);
+  const rel = document.getElementById('acct-rpnl');
+  rel.textContent = fmtPnl(rpnl);
+  rel.className = 'val ' + pnlClass(rpnl);
+}
+
+function renderMarkets() {
+  const grid = document.getElementById('markets-grid');
+  grid.innerHTML = WATCHED.map(w => {
+    const perp = statsById[w.perpId];
+    const spot = statsById[w.spotId];
+
+    const perpPrice = perp ? fromWei(perp.last_clearing_price) : null;
+    const spotPrice = spot ? fromWei(spot.last_clearing_price) : null;
+    const change = perp ? perp.price_change_24h : (spot ? spot.price_change_24h : null);
+    const vol = perp ? fromWei(perp.volume_24h) : null;
+    const hi = perp ? fromWei(perp.high_24h) : null;
+    const lo = perp ? fromWei(perp.low_24h) : null;
+    const mark = perp ? fromWei(perp.mark_price) : null;
+    const oracle = perp ? fromWei(perp.oracle_price) : null;
+    const funding = perp ? fromWei(perp.funding_rate) : null;
+    const oi = perp ? fromWei(perp.open_interest) : null;
+
+    let refHtml = '';
+    if (w.key === 'NVDA') {
+      const dist = (nvdaRef && perpPrice) ? ((perpPrice - nvdaRef) / nvdaRef * 100).toFixed(2) : '0.00';
+      refHtml = `
+        <div class="nvda-ref">
+          <span>Alert ref: ${fmtUSD(nvdaRef)} (${dist >= 0 ? '+' : ''}${dist}%)</span>
+          <button onclick="resetAlert()">Reset</button>
+        </div>`;
+    }
+
+    return `
+      <div class="card">
+        <div class="ticker">${w.key}</div>
+        <div class="full-name">${w.name}</div>
+        <div class="change ${pctClass(change)}">${fmtPct(change)}</div>
+        <div class="sub">
+          <div class="sub-col">
+            <div class="sub-label">Perp</div>
+            <div class="price">${fmtUSD(perpPrice)}</div>
+          </div>
+          <div class="sub-col">
+            <div class="sub-label">Spot</div>
+            <div class="price spot">${fmtUSD(spotPrice)}</div>
+          </div>
+        </div>
+        <div class="meta">
+          <div class="row"><span class="k">24h Vol</span><span class="v">${fmtVol(vol)}</span></div>
+          <div class="row"><span class="k">24h H/L</span><span class="v">${fmtUSD(hi,2)} / ${fmtUSD(lo,2)}</span></div>
+          <div class="row"><span class="k">Mark</span><span class="v">${fmtUSD(mark)}</span></div>
+          <div class="row"><span class="k">Oracle</span><span class="v">${fmtUSD(oracle)}</span></div>
+          <div class="row"><span class="k">Funding</span><span class="v">${funding != null ? (funding * 100).toFixed(4) + '%' : '—'}</span></div>
+          <div class="row"><span class="k">Open Int</span><span class="v">${fmtVol(oi)}</span></div>
+        </div>
+        ${refHtml}
+      </div>`;
+  }).join('');
+}
+
+function renderPositions() {
+  const el = document.getElementById('positions-body');
+  if (!posData || posData.positions.length === 0) {
+    el.innerHTML = '<div class="empty">No open positions</div>';
+    return;
+  }
+
+  const rows = posData.positions.map(p => {
+    const size = fromWei(p.size);
+    const entry = fromWei(p.entry_price);
+    const mark = fromWei(p.mark_price);
+    const notional = fromWei(p.notional);
+    const upnl = fromWei(p.unrealized_pnl);
+    const liq = fromWei(p.liquidation_price);
+    const lev = fromWei(p.leverage);
+
+    return `<tr>
+      <td>${p.base_symbol}/${p.quote_symbol}</td>
+      <td class="${p.side}">${p.side}</td>
+      <td>${size != null ? Math.abs(size).toFixed(4) : '—'}</td>
+      <td>${fmtUSD(entry)}</td>
+      <td>${fmtUSD(mark)}</td>
+      <td>${fmtUSD(notional)}</td>
+      <td class="${pnlClass(upnl)}">${fmtPnl(upnl)}</td>
+      <td>${fmtUSD(liq)}</td>
+      <td>${lev != null ? lev.toFixed(1) + 'x' : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `<table>
+    <thead><tr>
+      <th>Market</th><th>Side</th><th>Size</th><th>Entry</th>
+      <th>Mark</th><th>Notional</th><th>Unreal. PnL</th><th>Liq. Price</th><th>Lev</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+function updateTimestamp() {
+  document.getElementById('last-update').textContent =
+    'Last update: ' + new Date().toLocaleTimeString();
+}
+
+function setStatus(state, label) {
+  const dot = document.getElementById('ws-dot');
+  dot.className = 'dot ' + (state === 'live' ? 'live' : state === 'error' ? 'error' : '');
+  document.getElementById('ws-label').textContent = label;
+}
+
+// ── Init ───────────────────────────────────────────────
+if ('Notification' in window && Notification.permission === 'default') {
+  Notification.requestPermission();
+}
+
+seed();
+</script>
+</body>
+</html>

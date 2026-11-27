@@ -1,0 +1,21 @@
+{
+  "branch": "2-manual",
+  "case": "H",
+  "run": 1,
+  "finished": true,
+  "turns": 23,
+  "tool_calls": 21,
+  "tools": {
+    "Bash": 10,
+    "Glob": 1,
+    "Read": 8,
+    "Skill": 1,
+    "Write": 1
+  },
+  "seconds": 188,
+  "cost_usd": 1.056473,
+  "permission_denials": 0,
+  "sessions_turns": 1,
+  "send_attempts": 0,
+  "answer": "The dashboard is ready at [dashboard.html](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai-variants/2-manual/dashboard.html) [📁](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai-variants/2-manual/).\n\nTo use it, serve it locally (file:// can't reach the WebSocket):\n\n```\ncd /Users/sabpap/Workspace/Clients/Laurium/pod-ai-variants/2-manual\npython3 -m http.server 8371\n```\n\nThen open **http://localhost:8371/dashboard.html**.\n\n**What it does:**\n\n- **Account section** — shows your account value ($19.72), cash, unrealized P&L, and lifetime P&L, updated live via `pod_positions`\n- **Positions table** — lists open perp positions with side, size, entry/mark prices, P&L, and liquidation price (currently empty)\n- **Market cards** — NVDA, AAPL, GLD with live mark prices, 24h change, volume, open interest, and a mini price-tick chart that fills in as updates stream\n- **NVDA 1% alert** — when NVDA's mark price moves 1% from its reference (set on page load), a banner drops down and a browser notification fires. After each alert the reference resets, with a 60-second cooldown to avoid spam. The browser will ask for notification permission on first load.\n\nEverything streams live over pod's WebSocket with reconnection, duplicate-drop, and resume-from-last-round built in."
+}

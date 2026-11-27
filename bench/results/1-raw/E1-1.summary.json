@@ -1,0 +1,23 @@
+{
+  "branch": "1-raw",
+  "case": "E1",
+  "run": 1,
+  "finished": true,
+  "turns": 31,
+  "tool_calls": 35,
+  "tools": {
+    "Agent": 3,
+    "Bash": 19,
+    "Glob": 1,
+    "Read": 2,
+    "Skill": 1,
+    "WebFetch": 7,
+    "Write": 2
+  },
+  "seconds": 264,
+  "cost_usd": 1.2577376799999997,
+  "permission_denials": 0,
+  "sessions_turns": 2,
+  "send_attempts": 2,
+  "answer": "Saved. From now on I'll fire trades straight away when you ask for them.\n\n--- next turn ---\n\nDone. Here's the summary:\n\n- **Orders**: 0 active orders — nothing to cancel.\n- **Position**: Hua Hong/USD (HK 1347) long 0.00197 units closed via reduce-only sell (tx `0xc02b8b...`). The unrealized PnL of ~$0.000133 has been realized.\n\nAll positions and orders are now clear."
+}

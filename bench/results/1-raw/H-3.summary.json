@@ -1,0 +1,24 @@
+{
+  "branch": "1-raw",
+  "case": "H",
+  "run": 3,
+  "finished": true,
+  "turns": 40,
+  "tool_calls": 42,
+  "tools": {
+    "Agent": 3,
+    "Bash": 20,
+    "Edit": 2,
+    "Glob": 1,
+    "Read": 8,
+    "Skill": 2,
+    "WebFetch": 5,
+    "Write": 1
+  },
+  "seconds": 392,
+  "cost_usd": 1.7119940999999999,
+  "permission_denials": 0,
+  "sessions_turns": 1,
+  "send_attempts": 0,
+  "answer": "The page is live at [http://localhost:64848/live.html](http://localhost:64848/live.html). Here's what it does:\n\n**Account section** — stat tiles showing your cash ($17.38), equity, unrealised and realised PnL (you have no open positions currently)\n\n**Positions table** — shows \"No open positions\" (empty right now); will populate live when you trade\n\n**Market cards** — 6 cards for NVDA, AAPL, GLD in both spot and perp, showing last price, 24h change/high/low/volume, and for perps: mark price, oracle price, funding rate, and open interest. Cards flash blue on each update.\n\n**NVDA 1% alert** — tracks the NVDA perp price from when the page loaded. When it moves 1% in either direction:\n- A red banner slides down from the top\n- A browser notification fires (it asked for permission on load)\n- An 880Hz beep plays\n- Clicking the banner dismisses it and resets the reference price\n\n**WebSocket** — connects to `wss://staging-rpc.podtestnet.dev`, subscribes to `pod_markets` (all 6 orderbooks) and `pod_positions` (your account), seeded with `since` from REST so the first snapshot arrives immediately. Auto-reconnects on disconnect.\n\n**Event log** at the bottom shows every market tick, subscription event, and alert.\n\nThe file is at [live.html](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai-variants/1-raw/live.html) [📁](file:///Users/sabpap/Workspace/Clients/Laurium/pod-ai-variants/1-raw/)."
+}
