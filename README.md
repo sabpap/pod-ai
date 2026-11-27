@@ -9,10 +9,20 @@ AI tools for pod network. This repo is a Claude Code plugin marketplace holding 
 
 A person runs these, not the agent: Claude Code's auto mode blocks an agent from installing a plugin itself (seen 2026-11-26).
 
+First get this branch, in a terminal:
+
 ```
-/plugin marketplace add /Users/sabpap/Workspace/Clients/Laurium/pod-ai
+git clone -b 3-plugin git@github.com:sabpap/pod-ai.git pod-ai-3-plugin
+```
+
+Then, in Claude Code, with the full path of that folder:
+
+```
+/plugin marketplace add /full/path/to/pod-ai-3-plugin
 /plugin install pod@pod-ai
 ```
+
+You need: Foundry (`cast`), `jq`, `curl`, `bc`, Node.js 22 or later for live updates, and a wallet with funds on pod staging, as a Foundry keystore with its password in the macOS Keychain or as a private key in an environment variable.
 
 Then **start a new Claude Code session**. Skills load when a session starts, so `/pod:setup` does not appear in the session that installed it.
 
@@ -37,8 +47,6 @@ Four skills. A skill is split off only when a person will type its name; everyth
 | `/pod:setup` | The person, or the agent when no wallet is connected | Connect a wallet, prove it can send with one test transaction, show or remove the connection |
 | `/pod:status` | The person, or the agent when the state is unknown | Can the agent act on pod right now, and if not, why not |
 | `/pod:settings` | Only the person | Show or change approval (`ask` or `auto`), the market-order band and the default resting time |
-
-The seven-skill version this replaces (setup, status, account, settings, trade, markets, live) is at git tag `hybrid-original`.
 
 ## What is built
 

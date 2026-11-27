@@ -173,7 +173,7 @@ One reference that every skill points to: network addresses, identifiers, 10^18 
 
 ## Skills, as the user sees them
 
-Four skills (revised 2026-11-26, version 0.6.0; the main skill was named `pod` until 0.6.1). A skill is split off only when the user will type its name; everything the user says in words goes through one main skill, `/pod:use`, which reads a reference file for each kind of request. The earlier seven-skill version is at git tag `hybrid-original`.
+Four skills (revised 2026-11-26, version 0.6.0; the main skill was named `pod` until 0.6.1). A skill is split off only when the user will type its name; everything the user says in words goes through one main skill, `/pod:use`, which reads a reference file for each kind of request.
 
 | Skill | Section | Typical requests |
 |---|---|---|
