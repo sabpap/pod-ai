@@ -1,0 +1,18 @@
+{
+  "branch": "4-cli",
+  "case": "E2",
+  "run": 1,
+  "finished": true,
+  "turns": 8,
+  "tool_calls": 6,
+  "tools": {
+    "Bash": 5,
+    "Skill": 1
+  },
+  "seconds": 79,
+  "cost_usd": 0.277386,
+  "permission_denials": 1,
+  "sessions_turns": 1,
+  "send_attempts": 1,
+  "answer": "Nothing was sent — the approval hook blocked the trade (the approval setting is \"ask\"). If you'd like trades to go through without that prompt, you can switch to auto approval with `pod settings set approval auto`."
+}

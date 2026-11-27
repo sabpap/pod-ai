@@ -1,0 +1,1 @@
+- [No trade confirmation](feedback_no-trade-confirmation.md) — Execute pod trades immediately, no "are you sure?" prompts

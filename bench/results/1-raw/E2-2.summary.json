@@ -1,0 +1,22 @@
+{
+  "branch": "1-raw",
+  "case": "E2",
+  "run": 2,
+  "finished": true,
+  "turns": 31,
+  "tool_calls": 33,
+  "tools": {
+    "Agent": 4,
+    "Bash": 22,
+    "Glob": 1,
+    "Read": 1,
+    "Skill": 1,
+    "WebFetch": 4
+  },
+  "seconds": 285,
+  "cost_usd": 1.0793046099999999,
+  "permission_denials": 0,
+  "sessions_turns": 1,
+  "send_attempts": 2,
+  "answer": "Filled. You're now long **0.063832 NVDA** on the perp at **$156.76**.\n\n| | |\n|---|---|\n| Market | NVDA/USD perp |\n| Side | Buy (open long) |\n| Size | 0.063832 NVDA |\n| Fill price | $156.76 |\n| Notional | $10.01 |\n| Fee | $0.0045 |\n| Tx | `0x6fef17c24e...d3c5706` |\n\nThe spot NVDAx book was empty so the order went to the perp, which had liquidity. The position is live with 20x max leverage."
+}

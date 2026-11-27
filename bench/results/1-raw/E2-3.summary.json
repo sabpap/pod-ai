@@ -1,0 +1,20 @@
+{
+  "branch": "1-raw",
+  "case": "E2",
+  "run": 3,
+  "finished": true,
+  "turns": 21,
+  "tool_calls": 22,
+  "tools": {
+    "Agent": 3,
+    "Bash": 15,
+    "Skill": 1,
+    "WebFetch": 3
+  },
+  "seconds": 208,
+  "cost_usd": 0.7037772149999999,
+  "permission_denials": 0,
+  "sessions_turns": 1,
+  "send_attempts": 1,
+  "answer": "Done. Bought **$10 of NVDA** on the perp market:\n\n| | |\n|---|---|\n| **Market** | NVDA/USD perp |\n| **Side** | Long |\n| **Size** | 0.063698 NVDA |\n| **Fill price** | $156.96 |\n| **Notional** | $10.00 |\n| **Fee** | $0.0045 |\n| **Tx** | [`0xf5fa...b9`](https://staging-app.podtestnet.dev/tx/0xf5fa17559228df7662e3cd42e03183cf638d8e4bd9242b737124a8c571ba75b9) |"
+}

@@ -1,0 +1,20 @@
+{
+  "branch": "4-cli",
+  "case": "E1",
+  "run": 2,
+  "finished": true,
+  "turns": 10,
+  "tool_calls": 7,
+  "tools": {
+    "Bash": 3,
+    "Read": 1,
+    "Skill": 1,
+    "Write": 2
+  },
+  "seconds": 30,
+  "cost_usd": 0.24048899999999998,
+  "permission_denials": 0,
+  "sessions_turns": 2,
+  "send_attempts": 0,
+  "answer": "Got it. From now on I'll execute pod trades straight away without asking first.\n\n--- next turn ---\n\nYou have 0 open positions and 0 open orders — there's nothing to cancel or close. Your account is clean with $18.69 in cash."
+}

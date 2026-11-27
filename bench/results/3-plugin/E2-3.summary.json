@@ -1,0 +1,20 @@
+{
+  "branch": "3-plugin",
+  "case": "E2",
+  "run": 3,
+  "finished": true,
+  "turns": 7,
+  "tool_calls": 5,
+  "tools": {
+    "Bash": 2,
+    "Read": 1,
+    "Skill": 1,
+    "ToolSearch": 1
+  },
+  "seconds": 19,
+  "cost_usd": 0.13151649999999998,
+  "permission_denials": 0,
+  "sessions_turns": 1,
+  "send_attempts": 0,
+  "answer": "**Approval** — Buy 0.063914 NVDA perp at market (no worse than $159.58). Value ~$10.00 at the current price, worst case $10.20. Fee up to $0.0046, margin needed $0.51, free margin after $18.32. Size was rounded down to the market's step from $10 at the current price of $156.46.\n\n**Approve** (send it now) or **Deny** (send nothing)?"
+}

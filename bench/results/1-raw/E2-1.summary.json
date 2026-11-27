@@ -1,0 +1,21 @@
+{
+  "branch": "1-raw",
+  "case": "E2",
+  "run": 1,
+  "finished": true,
+  "turns": 24,
+  "tool_calls": 25,
+  "tools": {
+    "Agent": 3,
+    "Bash": 17,
+    "Glob": 1,
+    "Skill": 1,
+    "WebFetch": 3
+  },
+  "seconds": 212,
+  "cost_usd": 0.8437072049999998,
+  "permission_denials": 0,
+  "sessions_turns": 1,
+  "send_attempts": 2,
+  "answer": "Done. Market buy filled:\n\n| | |\n|---|---|\n| **Market** | NVDA/USD perp |\n| **Side** | Long |\n| **Size** | 0.064061 NVDA |\n| **Fill price** | $156.85 |\n| **Notional** | $10.05 |\n| **Fee** | $0.0045 |\n| **Tx** | `0x365b220f...d53449` |"
+}

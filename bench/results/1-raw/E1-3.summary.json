@@ -1,0 +1,23 @@
+{
+  "branch": "1-raw",
+  "case": "E1",
+  "run": 3,
+  "finished": true,
+  "turns": 18,
+  "tool_calls": 18,
+  "tools": {
+    "Agent": 1,
+    "Bash": 8,
+    "Glob": 2,
+    "Read": 1,
+    "Skill": 1,
+    "WebFetch": 3,
+    "Write": 2
+  },
+  "seconds": 84,
+  "cost_usd": 0.6034509349999999,
+  "permission_denials": 0,
+  "sessions_turns": 2,
+  "send_attempts": 0,
+  "answer": "Saved. From now on I'll fire off pod trades the moment you ask — no confirmation prompts.\n\n--- next turn ---\n\nYou're already clean — no open orders (active or pending) and no open positions on the `0xaD60A063D766742A1b0bEed69e5425dBDf403834` wallet. Nothing to cancel or close."
+}

@@ -1,0 +1,1 @@
+- [Pod trades: no confirmation](feedback_pod-trade-no-confirm.md) — execute trades immediately, don't ask before submitting

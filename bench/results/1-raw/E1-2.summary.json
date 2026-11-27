@@ -1,0 +1,23 @@
+{
+  "branch": "1-raw",
+  "case": "E1",
+  "run": 2,
+  "finished": true,
+  "turns": 25,
+  "tool_calls": 27,
+  "tools": {
+    "Agent": 4,
+    "Bash": 13,
+    "Glob": 1,
+    "Read": 1,
+    "Skill": 1,
+    "WebFetch": 5,
+    "Write": 2
+  },
+  "seconds": 134,
+  "cost_usd": 0.6748426249999999,
+  "permission_denials": 0,
+  "sessions_turns": 2,
+  "send_attempts": 0,
+  "answer": "Saved. From now on I'll fire pod trades straight away when you ask — no confirmation step, just the result.\n\n--- next turn ---\n\nYou're all clear — nothing to cancel or close:\n\n- **Open orders:** 0 (out of 150 total historical orders, all are already filled or cancelled)\n- **Open positions:** 0\n- **Cash balance:** ~16.36 USDC (account value = cash, no margin in use)\n\nYour account has no active orders and no open positions on pod staging."
+}

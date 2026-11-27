@@ -1,0 +1,18 @@
+{
+  "branch": "4-cli",
+  "case": "E2",
+  "run": 3,
+  "finished": true,
+  "turns": 8,
+  "tool_calls": 6,
+  "tools": {
+    "Bash": 5,
+    "Skill": 1
+  },
+  "seconds": 90,
+  "cost_usd": 0.2786095,
+  "permission_denials": 1,
+  "sessions_turns": 1,
+  "send_attempts": 1,
+  "answer": "Nothing was sent — the approval hook showed the trade and it was denied. If you'd like to proceed, let me know and I'll plan it again (the plan expires after 2 minutes)."
+}
